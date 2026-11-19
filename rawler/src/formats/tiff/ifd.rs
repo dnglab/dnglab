@@ -414,11 +414,7 @@ impl IFD {
   }
 
   pub fn get_new_sub_file_type(&self) -> Option<u16> {
-    if let Some(entry) = self.get_entry(TiffCommonTag::NewSubFileType) {
-      Some(entry.force_u16(0))
-    } else {
-      None
-    }
+    self.get_entry(TiffCommonTag::NewSubFileType).map(|entry| entry.force_u16(0))
   }
 
   pub fn find_ifds_with_tag<T: TiffTag>(&self, tag: T) -> Vec<&IFD> {

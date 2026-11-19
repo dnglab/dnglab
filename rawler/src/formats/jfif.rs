@@ -85,7 +85,7 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App0 {
     let pos = reader.stream_position()?;
     let len: u64 = reader.read_u16::<BigEndian>()? as u64;
 
-    const APP1_JFIF_MARKER: [u8; 5] = [b'J', b'F', b'I', b'F', b'\0'];
+    const APP1_JFIF_MARKER: [u8; 5] = *b"JFIF\0";
 
     let payload = payload_len(len)?;
     if payload >= APP1_JFIF_MARKER.len() as u64 {
@@ -197,7 +197,7 @@ impl<R: Read + Seek> ReadSegment<&mut R> for App1 {
     let pos = reader.stream_position()?;
     let len: u64 = reader.read_u16::<BigEndian>()? as u64;
 
-    const APP1_EXIF_MARKER: [u8; 6] = [b'E', b'x', b'i', b'f', b'\0', b'\0'];
+    const APP1_EXIF_MARKER: [u8; 6] = *b"Exif\0\0";
 
     let payload = payload_len(len)?;
     if payload >= APP1_EXIF_MARKER.len() as u64 {

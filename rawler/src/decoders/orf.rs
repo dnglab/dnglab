@@ -289,15 +289,15 @@ impl<'a> Decoder for OrfDecoder<'a> {
       let src = file.subview(offset as u64, size as u64)?;
       if self.tiff.little_endian() {
         log::debug!("ORF: decompress_12le_unpacked_left_aligned");
-        decompress_12le_unpacked_left_aligned(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
+        decompress_12le_unpacked_left_aligned(src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       } else {
         log::debug!("ORF: decompress_12be_unpacked_left_aligned");
-        decompress_12be_unpacked_left_aligned(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
+        decompress_12be_unpacked_left_aligned(src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       }
     } else if size >= width * height / 10 * 16 {
       log::debug!("ORF: decompress_12le_wcontrol");
       let src = file.subview(offset as u64, size as u64)?;
-      decompress_12le_wcontrol(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
+      decompress_12le_wcontrol(src, width, height, dummy).map_err(RawlerError::decoder_failed)?
     } else if size >= width * height * 12 / 8 {
       if base_camera.find_hint("interlaced") {
         log::debug!("ORF: decompress_12be_interlaced");
@@ -312,11 +312,11 @@ impl<'a> Decoder for OrfDecoder<'a> {
           second_field_offset - second_field_offset_unaligned
         };
         let src = file.subview(offset as u64, (size + gap) as u64)?;
-        decompress_12be_interlaced(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
+        decompress_12be_interlaced(src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       } else {
         log::debug!("ORF: decompress_12be_msb32");
         let src = file.subview(offset as u64, size as u64)?;
-        decompress_12be_msb32(&src, width, height, dummy).map_err(RawlerError::decoder_failed)?
+        decompress_12be_msb32(src, width, height, dummy).map_err(RawlerError::decoder_failed)?
       }
     } else {
       log::debug!("ORF: fallback to decode_compressed");
@@ -336,7 +336,7 @@ impl<'a> Decoder for OrfDecoder<'a> {
     if bps == 14 {
       // Blacklevel is already corrected, only required for whitelevel.
       // Encoded for 12 bps, whitelevel must be multiplied by 4.
-      img.whitelevel.0.iter_mut().for_each(|level| *level = *level << 2);
+      img.whitelevel.0.iter_mut().for_each(|level| *level <<= 2);
     }
 
     Ok(img)
@@ -539,7 +539,7 @@ impl<'a> OrfDecoder<'a> {
     if bps == 14 || bps == 10 {
       // Blacklevel is encoded for 12 bits with 14 valid bits, and for 10 bits with
       // 10 valid bits in 12 bit values
-      levels.iter_mut().for_each(|level| *level = *level << 2);
+      levels.iter_mut().for_each(|level| *level <<= 2);
     }
     Ok(Some(BlackLevel::new(&levels, camera.cfa.width, camera.cfa.height, 1)))
   }

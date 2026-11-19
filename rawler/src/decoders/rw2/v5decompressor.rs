@@ -47,7 +47,7 @@ pub(crate) fn decode_panasonic_v5(buf: &[u8], width: usize, height: usize, bps: 
       swapped.extend_from_slice(&src[V5_SECTION_SPLIT_OFFSET..]);
       swapped.extend_from_slice(&src[..V5_SECTION_SPLIT_OFFSET]);
       // Transform the packets into final pixels
-      for (out, bytes) in chunk.chunks_exact_mut(pixels_per_packet).zip(swapped.chunks_exact(V5_BYTES_PER_PACKET)) {
+      for (out, bytes) in chunk.chunks_exact_mut(pixels_per_packet).zip(swapped.as_chunks::<V5_BYTES_PER_PACKET>().0) {
         // The packet is a bitstream in LSB order.
         let mut pump = BitPumpLSB::new(bytes);
         for p in out.iter_mut() {

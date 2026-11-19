@@ -581,7 +581,7 @@ where
     let jpeg_encoder = JpegEncoder::new_with_quality(&mut self.writer.dng.writer, (quality * 100.0).clamp(0.0, 100.0) as u8);
     preview_img
       .write_with_encoder(jpeg_encoder)
-      .map_err(|err| io::Error::new(io::ErrorKind::Other, format!("Failed to write jpeg preview: {:?}", err)))?;
+      .map_err(|err| io::Error::other(format!("Failed to write jpeg preview: {:?}", err)))?;
     let data_len = self.writer.dng.position()? - offset;
     debug!("writing preview: {} s", now.elapsed().as_secs_f32());
 

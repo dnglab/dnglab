@@ -679,7 +679,7 @@ impl<'a> NefDecoder<'a> {
       // This should be no more than 16 extra bytes.
       let total_padding = size - req_input_bytes;
       let per_row_padding = total_padding / height;
-      if total_padding % height != 0 {
+      if !total_padding.is_multiple_of(height) {
         None
       } else if per_row_padding < 16 {
         Some(per_row_padding)
@@ -856,7 +856,7 @@ impl<'a> NefDecoder<'a> {
         let mut seed = [0; 4];
         seed.iter_mut().zip(inb).for_each(|(seed, byte)| *seed = *byte);
         let mut random = u32::from_be_bytes(seed);
-        for (o, i) in out.chunks_exact_mut(6).zip(inb.chunks_exact(6)) {
+        for (o, i) in out.as_chunks_mut::<6>().0.iter_mut().zip(inb.as_chunks::<6>().0) {
           let g1: u16 = i[0] as u16;
           let g2: u16 = i[1] as u16;
           let g3: u16 = i[2] as u16;

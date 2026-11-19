@@ -73,7 +73,7 @@ impl<'a> Decompressor<'a, u16> for PackedDecompressor {
       // Generic MSB decoder for exotic packed bit sizes
       (_, bps) if bps > 0 && bps < 16 => unpack_generic_msb(lines, src, skip_rows, line_width, self.bps),
       // Unhandled bits
-      (_, bps) => return Err(format!("unsupported packed compression scheme: {bps} bps")),
+      (_, bps) => Err(format!("unsupported packed compression scheme: {bps} bps")),
     }
   }
 
@@ -91,7 +91,7 @@ fn unpack_16be<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
   }
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * 2)..];
-    for (out, bytes) in line.into_iter().zip(inb.as_chunks::<2>().0.into_iter()) {
+    for (out, bytes) in line.iter_mut().zip(inb.as_chunks::<2>().0.iter()) {
       *out = u16::from_be_bytes(*bytes);
     }
   }
@@ -107,7 +107,7 @@ fn unpack_16le<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
   }
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * 2)..];
-    for (out, bytes) in line.into_iter().zip(inb.as_chunks::<2>().0.into_iter()) {
+    for (out, bytes) in line.iter_mut().zip(inb.as_chunks::<2>().0.iter()) {
       *out = u16::from_le_bytes(*bytes);
     }
   }
@@ -123,7 +123,7 @@ fn unpack_12be<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
   }
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * BITS / 8)..];
-    for (o, i) in line.as_chunks_mut::<2>().0.into_iter().zip(inb.as_chunks::<3>().0.into_iter()) {
+    for (o, i) in line.as_chunks_mut::<2>().0.iter_mut().zip(inb.as_chunks::<3>().0.iter()) {
       let g1: u16 = i[0] as u16;
       let g2: u16 = i[1] as u16;
       let g3: u16 = i[2] as u16;
@@ -145,7 +145,7 @@ fn unpack_10be<'a>(lines: impl LineIteratorMut<'a, u16>, src: &[u8], skip_rows: 
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * BITS / 8)..];
 
-    for (o, i) in line.as_chunks_mut::<4>().0.into_iter().zip(inb.as_chunks::<5>().0) {
+    for (o, i) in line.as_chunks_mut::<4>().0.iter_mut().zip(inb.as_chunks::<5>().0) {
       let g1: u16 = i[0] as u16;
       let g2: u16 = i[1] as u16;
       let g3: u16 = i[2] as u16;
@@ -211,7 +211,7 @@ impl<'a> Decompressor<'a, f32> for PackedDecompressor {
       (Endian::Little, 16) => unpack_f16le(lines, src, skip_rows, line_width),
 
       // Unhandled bits
-      (_, bps) => return Err(format!("f32: unsupported packed compression scheme: {bps} bps")),
+      (_, bps) => Err(format!("f32: unsupported packed compression scheme: {bps} bps")),
     }
   }
 
@@ -230,7 +230,7 @@ fn unpack_f32be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * size_of::<f32>())..];
 
-    for (p, bytes) in line.into_iter().zip(inb.as_chunks::<4>().0.into_iter()) {
+    for (p, bytes) in line.iter_mut().zip(inb.as_chunks::<4>().0.iter()) {
       *p = f32::from_be_bytes(*bytes);
     }
   }
@@ -246,7 +246,7 @@ fn unpack_f32le<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   }
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * size_of::<f32>())..];
-    for (p, bytes) in line.into_iter().zip(inb.as_chunks::<4>().0.into_iter()) {
+    for (p, bytes) in line.iter_mut().zip(inb.as_chunks::<4>().0.iter()) {
       *p = f32::from_le_bytes(*bytes);
     }
   }
@@ -263,7 +263,7 @@ fn unpack_f24le<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   const SIZEOF_FP24: usize = 3;
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * SIZEOF_FP24)..];
-    for (i, bytes) in (0..width).zip(inb.chunks_exact(SIZEOF_FP24)) {
+    for (i, bytes) in (0..width).zip(inb.as_chunks::<SIZEOF_FP24>().0) {
       line[i] = LEf24(bytes, 0);
     }
   }
@@ -280,7 +280,7 @@ fn unpack_f24be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   const SIZEOF_FP24: usize = 3;
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * SIZEOF_FP24)..];
-    for (i, bytes) in (0..width).zip(inb.chunks_exact(SIZEOF_FP24)) {
+    for (i, bytes) in (0..width).zip(inb.as_chunks::<SIZEOF_FP24>().0) {
       line[i] = BEf24(bytes, 0);
     }
   }
@@ -297,7 +297,7 @@ fn unpack_f16le<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   const SIZEOF_FP16: usize = 2;
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * SIZEOF_FP16)..];
-    for (i, bytes) in (0..width).zip(inb.chunks_exact(SIZEOF_FP16)) {
+    for (i, bytes) in (0..width).zip(inb.as_chunks::<SIZEOF_FP16>().0) {
       line[i] = LEf16(bytes, 0);
     }
   }
@@ -314,7 +314,7 @@ fn unpack_f16be<'a>(lines: impl LineIteratorMut<'a, f32>, src: &[u8], skip_rows:
   const SIZEOF_FP16: usize = 2;
   for (row, line) in lines.enumerate() {
     let inb = &src[((skip_rows + row) * width * SIZEOF_FP16)..];
-    for (i, bytes) in (0..width).zip(inb.chunks_exact(SIZEOF_FP16)) {
+    for (i, bytes) in (0..width).zip(inb.as_chunks::<SIZEOF_FP16>().0) {
       line[i] = BEf16(bytes, 0);
     }
   }
@@ -349,7 +349,7 @@ pub(crate) fn decompress_8bit_wtable(buf: &[u8], tbl: &LookupTable, width: usize
       seed.iter_mut().zip(inb).for_each(|(seed, byte)| *seed = *byte);
       let mut random = u32::from_le_bytes(seed);
 
-      for (o, i) in out.into_iter().zip(inb.into_iter()) {
+      for (o, i) in out.iter_mut().zip(inb.iter()) {
         *o = tbl.dither(*i as u16, &mut random);
       }
       Ok(())
@@ -402,7 +402,7 @@ pub(crate) fn decompress_10le_lsb16(buf: &[u8], width: usize, height: usize, dum
     &(|out: &mut [u16], row| {
       let inb = &buf[(row * width * 10 / 8)..];
 
-      for (o, i) in out.as_chunks_mut::<8>().0.into_iter().zip(inb.as_chunks::<10>().0) {
+      for (o, i) in out.as_chunks_mut::<8>().0.iter_mut().zip(inb.as_chunks::<10>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -492,7 +492,7 @@ pub(crate) fn decompress_12be_msb16(buf: &[u8], width: usize, height: usize, dum
     dummy,
     &(|out: &mut [u16], chunk_id| {
       let inb = buf.get(chunk_id * (PACKED_CHUNK_PIXELS / 4) * 6..).unwrap_or_default();
-      for (o, i) in out.chunks_exact_mut(4).zip(inb.chunks_exact(6)) {
+      for (o, i) in out.as_chunks_mut::<4>().0.iter_mut().zip(inb.as_chunks::<6>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -534,7 +534,7 @@ pub(crate) fn decompress_12le_16bitaligned(buf: &[u8], width: usize, height: usi
     dummy,
     &(|out: &mut [u16], row| {
       let inb = &buf[row * stride..];
-      for (o, i) in out.as_chunks_mut::<2>().0.into_iter().zip(inb.as_chunks::<3>().0) {
+      for (o, i) in out.as_chunks_mut::<2>().0.iter_mut().zip(inb.as_chunks::<3>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -576,7 +576,7 @@ pub(crate) fn decompress_12be_msb32(buf: &[u8], width: usize, height: usize, dum
     dummy,
     &(|out: &mut [u16], chunk_id| {
       let inb = buf.get(chunk_id * (PACKED_CHUNK_PIXELS / 8) * 12..).unwrap_or_default();
-      for (o, i) in out.chunks_exact_mut(8).zip(inb.chunks_exact(12)) {
+      for (o, i) in out.as_chunks_mut::<8>().0.iter_mut().zip(inb.as_chunks::<12>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -637,7 +637,7 @@ pub(crate) fn decompress_14be_msb32(buf: &[u8], width: usize, height: usize, dum
     dummy,
     &(|out: &mut [u16], chunk_id| {
       let inb = buf.get(chunk_id * (PACKED_CHUNK_PIXELS / 16) * 28..).unwrap_or_default();
-      for (o, i) in out.chunks_exact_mut(16).zip(inb.chunks_exact(28)) {
+      for (o, i) in out.as_chunks_mut::<16>().0.iter_mut().zip(inb.as_chunks::<28>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -735,8 +735,8 @@ pub(crate) fn decompress_12le_wcontrol(buf: &[u8], width: usize, height: usize, 
     &(|out: &mut [u16], row| {
       let inb = &buf[(row * perline)..];
 
-      for (oc, ic) in out.chunks_exact_mut(10).zip(inb.chunks_exact(16)) {
-        for (o, i) in oc.chunks_exact_mut(2).zip(ic.chunks_exact(3)) {
+      for (oc, ic) in out.as_chunks_mut::<10>().0.iter_mut().zip(inb.as_chunks::<16>().0) {
+        for (o, i) in oc.as_chunks_mut::<2>().0.iter_mut().zip(ic.as_chunks::<3>().0) {
           let g1: u16 = i[0] as u16;
           let g2: u16 = i[1] as u16;
           let g3: u16 = i[2] as u16;
@@ -783,8 +783,8 @@ pub(crate) fn decompress_12be_wcontrol(buf: &[u8], width: usize, height: usize, 
     &(|out: &mut [u16], row| {
       let inb = &buf[(row * perline)..];
 
-      for (oc, ic) in out.chunks_exact_mut(10).zip(inb.chunks_exact(16)) {
-        for (o, i) in oc.chunks_exact_mut(2).zip(ic.chunks_exact(3)) {
+      for (oc, ic) in out.as_chunks_mut::<10>().0.iter_mut().zip(inb.as_chunks::<16>().0) {
+        for (o, i) in oc.as_chunks_mut::<2>().0.iter_mut().zip(ic.as_chunks::<3>().0) {
           let g1: u16 = i[0] as u16;
           let g2: u16 = i[1] as u16;
           let g3: u16 = i[2] as u16;
@@ -834,7 +834,7 @@ pub(crate) fn decompress_12be_interlaced(buf: &[u8], width: usize, height: usize
       let off = row / 2 * width * 12 / 8;
       let inb = if (row % 2) == 0 { &buf[off..] } else { &second_field[off..] };
 
-      for (o, i) in out.as_chunks_mut::<2>().0.into_iter().zip(inb.as_chunks::<3>().0) {
+      for (o, i) in out.as_chunks_mut::<2>().0.iter_mut().zip(inb.as_chunks::<3>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -881,7 +881,7 @@ pub(crate) fn decompress_12be_interlaced_unaligned(buf: &[u8], width: usize, hei
       let off = row / 2 * width * 12 / 8;
       let inb = if (row % 2) == 0 { &buf[off..] } else { &second_field[off..] };
 
-      for (o, i) in out.as_chunks_mut::<2>().0.into_iter().zip(inb.as_chunks::<3>().0) {
+      for (o, i) in out.as_chunks_mut::<2>().0.iter_mut().zip(inb.as_chunks::<3>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -920,7 +920,7 @@ pub(crate) fn decompress_12le(buf: &[u8], width: usize, height: usize, dummy: bo
     &(|out: &mut [u16], row| {
       let inb = &buf[(row * width * 12 / 8)..];
 
-      for (o, i) in out.as_chunks_mut::<2>().0.into_iter().zip(inb.as_chunks::<3>().0) {
+      for (o, i) in out.as_chunks_mut::<2>().0.iter_mut().zip(inb.as_chunks::<3>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -960,7 +960,7 @@ pub(crate) fn decompress_12le_padded(buf: &[u8], width: usize, height: usize, st
     &(|out: &mut [u16], row| {
       let inb = &buf[(row * stripesize)..];
 
-      for (o, i) in out.as_chunks_mut::<2>().0.into_iter().zip(inb.as_chunks::<3>().0) {
+      for (o, i) in out.as_chunks_mut::<2>().0.iter_mut().zip(inb.as_chunks::<3>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;
@@ -1001,7 +1001,7 @@ pub(crate) fn decompress_14le_padded(buf: &[u8], width: usize, height: usize, st
     &(|out: &mut [u16], row| {
       let inb = &buf[(row * stripesize)..];
 
-      for (o, i) in out.as_chunks_mut::<4>().0.into_iter().zip(inb.as_chunks::<7>().0) {
+      for (o, i) in out.as_chunks_mut::<4>().0.iter_mut().zip(inb.as_chunks::<7>().0) {
         let g1: u16 = i[0] as u16;
         let g2: u16 = i[1] as u16;
         let g3: u16 = i[2] as u16;

@@ -189,16 +189,11 @@ impl clap::ValueEnum for DngCompression {
   }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum DngPhotometricConversion {
+  #[default]
   Original,
   Linear,
-}
-
-impl Default for DngPhotometricConversion {
-  fn default() -> Self {
-    Self::Original
-  }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]

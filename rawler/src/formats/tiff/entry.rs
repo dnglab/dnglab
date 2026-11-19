@@ -186,7 +186,7 @@ impl Entry {
         reader.read_u32_into(&mut tmp)?;
 
         let mut v = Vec::with_capacity(count as usize);
-        for chunk in tmp.chunks_exact(2) {
+        for chunk in tmp.as_chunks::<2>().0 {
           v.push(Rational::new(chunk[0], chunk[1]));
         }
         Entry {
@@ -236,7 +236,7 @@ impl Entry {
         reader.read_i32_into(&mut tmp)?;
 
         let mut v = Vec::with_capacity(count as usize);
-        for chunk in tmp.chunks_exact(2) {
+        for chunk in tmp.as_chunks::<2>().0 {
           v.push(SRational::new(chunk[0], chunk[1]));
         }
         Entry {

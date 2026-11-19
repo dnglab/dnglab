@@ -12,6 +12,12 @@ impl JpegDecompressor {
   }
 }
 
+impl Default for JpegDecompressor {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 impl<'a> Decompressor<'a, u16> for JpegDecompressor {
   /// Decodes a lossy JPEG buffer into `u16` pixel lines.
   ///

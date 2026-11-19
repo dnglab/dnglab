@@ -460,7 +460,10 @@ pub(crate) fn decode_panasonic_v8(rawfile: &RawSource, width: usize, height: usi
   let total_strip_count = (params.num_of_strips_h * params.num_of_strips_v) as usize;
   let mut bitstreams = Vec::with_capacity(total_strip_count);
   for strip_id in 0..total_strip_count {
-    bitstreams.push(rawfile.subview(params.strip_byte_offsets[strip_id] as u64, (params.strip_data_size[strip_id] as u64 + 7) / 8)?);
+    bitstreams.push(rawfile.subview(
+      params.strip_byte_offsets[strip_id] as u64,
+      (params.strip_data_size[strip_id] as u64).div_ceil(8),
+    )?);
   }
 
   // Each strip decodes its own region of the output image, the split fails

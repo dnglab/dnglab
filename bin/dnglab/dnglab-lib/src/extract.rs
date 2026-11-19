@@ -55,7 +55,7 @@ pub async fn extract(options: &ArgMatches) -> crate::Result<()> {
       })?;
 
       let tmp: Result<Vec<ExtractRawJob>> = list.par_iter().map(|entry| generate_job(entry, options, true)).collect();
-      jobs.extend(tmp?.into_iter());
+      jobs.extend(tmp?);
     }
   }
 

@@ -194,7 +194,7 @@ where
 
   pub fn crop(&self, area: Rect) -> Self {
     assert!(self.initialized);
-    crop(&self, area)
+    crop(self, area)
   }
 
   pub fn into_crop(self, area: Rect) -> Self {
@@ -242,22 +242,19 @@ where
     decompress_lines_fn(pixbuf.width, pixbuf.height, false, &|line, row| {
       let src_row = row / 2;
       let offset = src_row * line_distance;
-      let ch_a;
-      let ch_b;
-      if row & 1 == 0 {
+      let (ch_a, ch_b) = if row & 1 == 0 {
         // For even rows, we take top-left and top-right channel data.
-        ch_a = &ch0[offset..offset + half_width];
-        ch_b = &ch1[offset..offset + half_width];
+        (&ch0[offset..offset + half_width], &ch1[offset..offset + half_width])
       } else {
         // For odd rows, we take bottom-left and bottom-right channel data.
-        ch_a = &ch2[offset..offset + half_width];
-        ch_b = &ch3[offset..offset + half_width];
-      }
+        (&ch2[offset..offset + half_width], &ch3[offset..offset + half_width])
+      };
 
       debug_assert_eq!(ch_a.len(), ch_b.len());
       debug_assert_eq!(ch_a.len() + ch_b.len(), line.len());
       debug_assert_eq!(line_width, line.len());
-      line.chunks_exact_mut(2).zip(ch_a.iter().zip(ch_b.iter())).for_each(|(dst, (a, b))| {
+      let (pairs, _) = line.as_chunks_mut::<2>();
+      pairs.iter_mut().zip(ch_a.iter().zip(ch_b.iter())).for_each(|(dst, (a, b))| {
         dst[0] = *a;
         dst[1] = *b;
       });
@@ -716,7 +713,7 @@ impl<'a, T> ImageView<'a, T> {
 
   /// Pixels as arrays of N samples, `None` if the image has not N channels
   pub fn as_array_slice<const N: usize>(&self) -> Option<&'a [[T; N]]> {
-    (N == self.channels).then(|| self.data.as_chunks::<N>().0)
+    (N == self.channels).then_some(self.data.as_chunks::<N>().0)
   }
 
   /// All samples
@@ -805,12 +802,12 @@ impl<'a, T> ImageViewMut<'a, T> {
 
   /// Pixels as arrays of N samples, `None` if the image has not N channels
   pub fn as_array_slice<const N: usize>(&self) -> Option<&[[T; N]]> {
-    (N == self.channels).then(|| self.data.as_chunks::<N>().0)
+    (N == self.channels).then_some(self.data.as_chunks::<N>().0)
   }
 
   /// Mutable pixels as arrays of N samples, `None` if the image has not N channels
   pub fn as_array_slice_mut<const N: usize>(&mut self) -> Option<&mut [[T; N]]> {
-    (N == self.channels).then(|| self.data.as_chunks_mut::<N>().0)
+    (N == self.channels).then_some(self.data.as_chunks_mut::<N>().0)
   }
 
   /// All samples

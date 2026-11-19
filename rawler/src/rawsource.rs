@@ -4,7 +4,6 @@ use std::{
   fmt::Debug,
   fs::File,
   io::Cursor,
-  iter::repeat,
   ops::Deref,
   path::{Path, PathBuf},
   sync::Arc,
@@ -98,7 +97,7 @@ impl RawSource {
       } else {
         let mut buf = Vec::with_capacity((size + 16) as usize);
         buf.extend_from_slice(self.subview(offset, size)?);
-        buf.extend(repeat(0).take(16));
+        buf.extend(std::iter::repeat_n(0, 16));
         Ok(PaddedBuf::new_owned(buf, size as usize))
       }
     } else {
@@ -120,7 +119,7 @@ impl RawSource {
     if offset < self.len() as u64 {
       let mut buf = Vec::with_capacity((self.len() - offset as usize + 16) as usize);
       buf.extend_from_slice(self.subview_until_eof(offset)?);
-      buf.extend(repeat(0).take(16));
+      buf.extend(std::iter::repeat_n(0, 16));
       Ok(PaddedBuf::new_owned(buf, self.len() - offset as usize))
     } else {
       Err(std::io::Error::new(

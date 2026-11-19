@@ -134,18 +134,9 @@ fn decode_row<const PREDICTOR: usize>(
   for col in (start..end).step_by(ncomp) {
     for (c, htable) in htables.iter().enumerate() {
       let p: i32 = match PREDICTOR {
-        1 => {
-          let a = out[row * stripwidth + (col - ncomp) + c] as i32;
-          a
-        }
-        2 => {
-          let b = out[(row - 1) * stripwidth + col + c] as i32;
-          b
-        }
-        3 => {
-          let c = out[(row - 1) * stripwidth + (col - ncomp) + c] as i32;
-          c
-        }
+        1 => out[row * stripwidth + (col - ncomp) + c] as i32,
+        2 => out[(row - 1) * stripwidth + col + c] as i32,
+        3 => out[(row - 1) * stripwidth + (col - ncomp) + c] as i32,
         4 => {
           let a = out[row * stripwidth + (col - ncomp) + c] as i32;
           let b = out[(row - 1) * stripwidth + col + c] as i32;
@@ -418,7 +409,7 @@ pub fn decode_hasselblad(ljpeg: &LjpegDecompressor, out: &mut [u16], width: usiz
   for line in out.chunks_exact_mut(width) {
     let mut p1: i32 = 0x8000;
     let mut p2: i32 = 0x8000;
-    for o in line.chunks_exact_mut(2) {
+    for o in line.as_chunks_mut::<2>().0 {
       let len1 = htable.huff_len(&mut pump)?;
       let len2 = htable.huff_len(&mut pump)?;
       // The predictions sum up over the line

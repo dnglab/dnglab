@@ -124,7 +124,7 @@ impl Raw2DngJob {
             log::error!(
               "Unsupported file: \"{}\"\n{}\nPlease see https://github.com/dnglab/dnglab/blob/main/CONTRIBUTE_SAMPLES.md how to contribute samples to get this camera supported.",
               orig_filename,
-              err.to_string()
+              err
             );
           }
           RawlerError::DecoderFailed { .. } => {

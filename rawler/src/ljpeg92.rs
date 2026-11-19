@@ -464,7 +464,7 @@ impl HuffTableBuilder {
   /// Useful for testing only.
   fn _generic_table(histogram: [usize; Self::CLASSES], _resolution: f32) -> [BitArray16; HuffTableBuilder::CLASSES] {
     let mut dist: Vec<(usize, usize)> = histogram.iter().enumerate().map(|(a, b)| (a, *b)).collect();
-    dist.sort_by(|a, b| b.1.cmp(&a.1));
+    dist.sort_by_key(|a| std::cmp::Reverse(a.1));
     #[cfg(feature = "inspector")]
     for (i, f) in &dist {
       inspector!("Freq: {}: {}, {}", i, f, *f as f32 / _resolution);
@@ -760,7 +760,7 @@ impl<'a> LjpegCompressor<'a> {
           .filter(|(_, code)| code.len() == bit_len)
           .map(|(ssss, code)| (ssss as u16, *code))
           .collect();
-        codes.sort_by(|a, b| a.1.cmp(&b.1));
+        codes.sort_by_key(|a| a.1);
         for (ssss, _) in codes.iter() {
           encoded.write_u8(*ssss as u8)?;
           inspector!("VAL: {}", ssss);

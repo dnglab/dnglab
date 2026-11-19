@@ -249,7 +249,7 @@ impl<'a> CrwDecoder<'a> {
     let mut carry: i32 = 0;
     let mut base = [0_i32; 2];
     let mut pnum = 0;
-    for pixout in out.pixels_mut().chunks_exact_mut(64) {
+    for pixout in out.pixels_mut().as_chunks_mut::<64>().0 {
       // Decode a block of 64 differences
       let mut diffbuf = [0_i32; 64];
       let mut i: usize = 0;
@@ -300,7 +300,7 @@ impl<'a> CrwDecoder<'a> {
       // The compressed data follows the low bits, so they are in the file
       let low = file.subview(26, lowbits_len as u64)?;
       // Add the uncompressed 2 low bits to the decoded 8 high bits
-      for (o, &c) in out.pixels_mut().chunks_exact_mut(4).zip(low) {
+      for (o, &c) in out.pixels_mut().as_chunks_mut::<4>().0.iter_mut().zip(low) {
         let c = c as u16;
         o[0] = (o[0] << 2) | (c) & 0x03;
         o[1] = (o[1] << 2) | (c >> 2) & 0x03;

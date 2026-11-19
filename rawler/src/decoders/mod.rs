@@ -227,8 +227,9 @@ pub enum WellKnownIFD {
   VirtualMakernotes,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
 pub enum FormatHint {
+  #[default]
   Unknown,
   CR2,
   CR3,
@@ -254,12 +255,6 @@ pub enum FormatHint {
   SRW,
   TFR,
   X3F,
-}
-
-impl Default for FormatHint {
-  fn default() -> Self {
-    Self::Unknown
-  }
 }
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -793,7 +788,7 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
 
       pixbuf = reorder_and_crop(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
       pixbuf = deinterleave(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
-      return Ok(RawImageData::Integer(pixbuf.into_inner()));
+      Ok(RawImageData::Integer(pixbuf.into_inner()))
     }
     // Floating Point (IEEE) storage
     SampleFormat::IEEEFP => {
@@ -822,7 +817,7 @@ pub fn plain_image_from_ifd_ext(ifd: &IFD, rawsource: &RawSource, ljpeg_dng_bug:
 
       pixbuf = reorder_and_crop(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
       pixbuf = deinterleave(pixbuf, ifd, tiff_width, tiff_height, cpp)?;
-      return Ok(RawImageData::Float(pixbuf.into_inner()));
+      Ok(RawImageData::Float(pixbuf.into_inner()))
     }
     _ => Err(decoder_error!("Unsupported sample format: {:?}", sample_format)),
   }

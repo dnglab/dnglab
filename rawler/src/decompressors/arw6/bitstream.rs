@@ -82,7 +82,7 @@ fn decode_group(reader: &mut BitPump<'_>, k: u32, not_last: bool, out: &mut [i32
 /// first. While k==0 the line is coded as runs of all-zero groups; otherwise
 /// each group is decode_group coded.
 fn decode_line(reader: &mut BitPump<'_>, out: &mut [i32]) -> Result<()> {
-  debug_assert!(out.len() % GROUP_SIZE == 0);
+  debug_assert!(out.len().is_multiple_of(GROUP_SIZE));
   let groups = out.len() / GROUP_SIZE;
   out.fill(0);
   let mut k = update_k(reader, 0)?;
