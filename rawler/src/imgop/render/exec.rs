@@ -256,10 +256,12 @@ impl Executor {
         image.data = stagger.to_stage3(&image.data, image.channels);
         (image.width, image.height) = (stage3.w, stage3.h);
         log::debug!("Dimension after the rotation {:?}", image.dim());
-        // The image data is the stage 3 image now
+        // The image data is the stage 3 image now, the DefaultScale refers to it
         let rect = image.view().rect();
         (self.active_area, self.crop_area) = (None, *crop);
         (self.stage3_area, self.origin) = (Some(rect), Point::default());
+        let camera = &mut self.rawimage.camera;
+        camera.default_scale = camera.default_scale.unscaled(stagger.full_scale());
       }
       Op::Denoise { strength, wb } => wavelet_denoise(ImageRegionMut::from(self.image().view_mut()), *strength, wb)?,
       Op::Exposure { manual, meter_scale, scale } => {
