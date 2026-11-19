@@ -330,7 +330,7 @@ mod tests {
 
   #[test]
   fn jxl_requires_dng_1_7() {
-    let (_tmp, options) = convert_matches(&["convert", "-c", "jxl", "in.raw", "out.dng"]);
+    let (_tmp, options) = convert_matches(&["convert", "-c", "jxl", "--max-dng-backward-version", "1.6", "in.raw", "out.dng"]);
     let err = resolve_convert_profile(&options).expect_err("must fail");
     assert!(err.to_string().contains("--max-dng-backward-version"), "{}", err);
     let (_tmp, options) = convert_matches(&["convert", "-c", "jxl", "--max-dng-backward-version", "1.7", "in.raw", "out.dng"]);

@@ -28,6 +28,10 @@ pub const DNG_VERSION_V1_7_1: DngVersionNumber = DngVersionNumber([1, 7, 1, 0]);
 /// Highest DNG specification version the DNG reader is based on
 pub const DNG_READER_VERSION: DngVersionNumber = DngVersionNumber([1, 7, 1, 0]);
 
+/// DNG specification version the DNG writer stores as DNGVersion,
+/// also the default for the maximum DNGBackwardVersion
+pub const DNG_WRITER_VERSION: DngVersion = DngVersion::V1_7_1;
+
 /// DNG specification version
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum DngVersion {
