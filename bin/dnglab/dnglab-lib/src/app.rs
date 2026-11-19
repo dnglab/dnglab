@@ -11,7 +11,7 @@ use clap::{
   value_parser,
 };
 use log::debug;
-use rawler::dng::{ApplyDngOpcodes, CropMode, DngCompression, DngVersion, MAX_JXL_DISTANCE, StaggeredOutput, opcodes::OpcodeSelector};
+use rawler::dng::{ApplyDngOpcodes, CropMode, DNG_WRITER_VERSION, DngCompression, DngVersion, MAX_JXL_DISTANCE, StaggeredOutput, opcodes::OpcodeSelector};
 use rawler::imgop::{
   color::OutputSpace,
   denoise::DenoiseStrength,
@@ -96,6 +96,11 @@ fn jxl_distance_parser(value: &str) -> std::result::Result<f32, String> {
   } else {
     Err(format!("{} is not in 0..={}", value, MAX_JXL_DISTANCE))
   }
+}
+
+/// Command line name of a DNG version
+fn dng_version_name(version: DngVersion) -> String {
+  version.to_possible_value().expect("DNG version has a value").get_name().to_owned()
 }
 
 /// Argument to remove DNG opcodes, shared by convert and process-raw
@@ -331,7 +336,7 @@ Lossy compression applies OpcodeList1 to the image data.",
       arg!(max_dng_backward_version: --"max-dng-backward-version" <version> "Maximum DNG backward version")
         .required(false)
         .value_parser(value_parser!(DngVersion))
-        .default_value("1.4"),
+        .default_value(dng_version_name(DNG_WRITER_VERSION)),
     )
     .arg(
       arg!(embedded: --"embed-raw" <embedded> "Embed the raw file into DNG")

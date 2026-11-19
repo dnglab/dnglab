@@ -36,7 +36,7 @@ use crate::{
 
 use super::{
   ApplyDngOpcodes, CompressionParams, CropMode, DEFAULT_DEFLATE_FLOAT_BITS, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT,
-  DNG_VERSION_V1_1, DngCompression, DngPhotometricConversion, DngVersion, JxlParams, StaggeredOutput,
+  DNG_VERSION_V1_1, DNG_WRITER_VERSION, DngCompression, DngPhotometricConversion, DngVersion, JxlParams, StaggeredOutput,
 };
 
 /// Opcode list stages in processing order
@@ -137,8 +137,8 @@ impl Default for ConvertParams {
       index: 0,
       keep_mtime: false,
       verify_digest: false,
-      dng_version: DngVersion::V1_7_1,
-      max_dng_backward_version: DngVersion::V1_4,
+      dng_version: DNG_WRITER_VERSION,
+      max_dng_backward_version: DNG_WRITER_VERSION,
       apply_dng_opcodes: ApplyDngOpcodes::Auto,
       remove_dng_opcodes: Vec::new(),
       replace_dng_opcodes: Vec::new(),

@@ -34,7 +34,7 @@ use crate::{
 };
 
 use super::{
-  CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_2, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1,
+  CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_2, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1, DNG_WRITER_VERSION,
   DngCompression, DngPhotometricConversion, DngVersionNumber, JxlParams,
   camera_profile_tags::{camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_gain_table_map_v1, write_string},
   digest::{self, Digest, PixelType, Samples},
@@ -655,7 +655,7 @@ where
   B: Write + Seek,
 {
   pub fn new(buf: B, backward_version: DngVersionNumber) -> Result<Self> {
-    Self::new_with_version(buf, DNG_VERSION_V1_7_1, backward_version)
+    Self::new_with_version(buf, DNG_WRITER_VERSION.as_dng_value(), backward_version)
   }
 
   /// Create a new DNG writer with explicit DNGVersion.

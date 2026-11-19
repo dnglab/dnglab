@@ -8,7 +8,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::dng::{
-  ApplyDngOpcodes, CropMode, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DEFAULT_LOSSY_JPEG_QUALITY, DngCompression, DngVersion,
+  ApplyDngOpcodes, CropMode, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DEFAULT_LOSSY_JPEG_QUALITY, DNG_WRITER_VERSION, DngCompression, DngVersion,
   StaggeredOutput, opcodes::OpcodeSelector,
 };
 
@@ -87,7 +87,7 @@ pub struct ConvertProfileV1 {
 }
 
 fn default_max_dng_backward_version() -> DngVersion {
-  DngVersion::V1_4
+  DNG_WRITER_VERSION
 }
 
 fn default_compression() -> DngCompression {
