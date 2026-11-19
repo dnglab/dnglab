@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: LGPL-2.1
 // Copyright 2021 Daniel Vogelbacher <daniel@chaospixel.com>
 
-use std::{borrow::Cow, time::Instant};
+use std::borrow::Cow;
+use web_time::Instant;
 
 use multiversion::multiversion;
 

@@ -3,7 +3,8 @@
 
 use multiversion::multiversion;
 use rayon::prelude::*;
-use std::{ops::Add, time::Instant};
+use std::ops::Add;
+use web_time::Instant;
 
 use crate::{
   cfa::{CFA, CFA_COLOR_B, CFA_COLOR_G, CFA_COLOR_R, PlaneColor},
