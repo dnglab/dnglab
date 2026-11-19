@@ -82,9 +82,9 @@ pub async fn analyze(options: &ArgMatches) -> crate::Result<()> {
     }
     if let rawler::RawImageData::Integer(samples) = &image.data {
       if image.cpp == 3 {
-        dump_ppm16(image.width, image.height, &samples)?;
+        dump_ppm16(image.width, image.height, samples)?;
       } else {
-        dump_pgm(image.width, image.height, &samples)?;
+        dump_pgm(image.width, image.height, samples)?;
       }
     } else {
       unreachable!()

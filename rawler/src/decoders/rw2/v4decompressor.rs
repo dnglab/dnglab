@@ -22,7 +22,7 @@ pub(crate) fn decode_panasonic_v4(buf: &[u8], width: usize, height: usize, split
       }
 
       let mut sh: i32 = 0;
-      for out in out.chunks_exact_mut(14) {
+      for out in out.as_chunks_mut::<14>().0 {
         let mut pred: [i32; 2] = [0, 0];
         let mut nonz: [i32; 2] = [0, 0];
 

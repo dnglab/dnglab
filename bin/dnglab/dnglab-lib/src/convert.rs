@@ -255,6 +255,7 @@ fn generate_job(
 ///
 /// `requested` is the value of the `--jobs` flag. `0` means "auto":
 ///   - default to `max(1, available_parallelism / 4)`, capped at 4.
+///
 /// Any non-zero `requested` value is honored verbatim.
 fn resolve_concurrency(requested: usize) -> usize {
   if requested > 0 {

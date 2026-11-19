@@ -454,48 +454,46 @@ impl<'a> ArwDecoder<'a> {
   }
 
   pub(crate) fn decode_arw2(buf: &[u8], width: usize, height: usize, curve: &LookupTable, dummy: bool) -> Result<PixU16> {
-    Ok(
-      decompress_lines_fn(
-        width,
-        height,
-        dummy,
-        &(|out: &mut [u16], row| {
-          let src = buf
-            .get(row * width..)
-            .ok_or_else(|| format!("ARW2: row {} is behind the end of the data", row))?;
-          let mut pump = BitPumpLSB::new(src);
+    decompress_lines_fn(
+      width,
+      height,
+      dummy,
+      &(|out: &mut [u16], row| {
+        let src = buf
+          .get(row * width..)
+          .ok_or_else(|| format!("ARW2: row {} is behind the end of the data", row))?;
+        let mut pump = BitPumpLSB::new(src);
 
-          let mut random = pump.peek_bits(16)?;
-          for out in out.chunks_exact_mut(32) {
-            // Process 32 pixels at a time in interleaved fashion
-            for j in 0..2 {
-              let max = pump.get_bits(11)?;
-              let min = pump.get_bits(11)?;
-              // Like dcraw, no shift for a minimum above the maximum
-              let delta = max.saturating_sub(min);
-              // Calculate the size of the data shift needed by how large the delta is
-              // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
-              let delta_shift: u32 = cmp::max(0, (32 - (delta.leading_zeros() as i32)) - 7) as u32;
-              let imax = pump.get_bits(4)? as usize;
-              let imin = pump.get_bits(4)? as usize;
+        let mut random = pump.peek_bits(16)?;
+        for out in out.as_chunks_mut::<32>().0 {
+          // Process 32 pixels at a time in interleaved fashion
+          for j in 0..2 {
+            let max = pump.get_bits(11)?;
+            let min = pump.get_bits(11)?;
+            // Like dcraw, no shift for a minimum above the maximum
+            let delta = max.saturating_sub(min);
+            // Calculate the size of the data shift needed by how large the delta is
+            // A delta with 11 bits requires a shift of 4, 10 bits of 3, etc
+            let delta_shift: u32 = cmp::max(0, (32 - (delta.leading_zeros() as i32)) - 7) as u32;
+            let imax = pump.get_bits(4)? as usize;
+            let imin = pump.get_bits(4)? as usize;
 
-              for i in 0..16 {
-                let val = if i == imax {
-                  max
-                } else if i == imin {
-                  min
-                } else {
-                  cmp::min(0x7ff, (pump.get_bits(7)? << delta_shift) + min)
-                };
-                out[j + (i * 2)] = curve.dither((val << 1) as u16, &mut random);
-              }
+            for i in 0..16 {
+              let val = if i == imax {
+                max
+              } else if i == imin {
+                min
+              } else {
+                cmp::min(0x7ff, (pump.get_bits(7)? << delta_shift) + min)
+              };
+              out[j + (i * 2)] = curve.dither((val << 1) as u16, &mut random);
             }
           }
-          Ok(())
-        }),
-      )
-      .map_err(RawlerError::decoder_failed)?,
+        }
+        Ok(())
+      }),
     )
+    .map_err(RawlerError::decoder_failed)
   }
 
   /// Some newer cameras like Alpha-1 uses LJPEG compression, but in an awkward way.

@@ -462,8 +462,7 @@ where
   }
 
   fn strip_prefix(&self, dir: PathBuf) -> result::Result<PathBuf, StripPrefixError> {
-    let res = dir.strip_prefix(&self.server_root).map(|p| p.to_path_buf());
-    res
+    dir.strip_prefix(&self.server_root).map(|p| p.to_path_buf())
   }
 
   async fn cwd(&mut self, directory: PathBuf) -> Result<()> {

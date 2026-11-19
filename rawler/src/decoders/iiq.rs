@@ -565,8 +565,8 @@ impl<'a> IiqDecoder<'a> {
       if head[2] * head[3] * head[4] * head[5] == 0 {
         continue;
       };
-      let wide: usize = head[2] / head[4] + ((head[2] % head[4] != 0) as usize);
-      let high: usize = head[3] / head[5] + ((head[3] % head[5] != 0) as usize);
+      let wide: usize = head[2] / head[4] + (!head[2].is_multiple_of(head[4]) as usize);
+      let high: usize = head[3] / head[5] + (!head[3].is_multiple_of(head[5]) as usize);
       // Each cell has a value for each pair of colors
       let need = wide * high * (nc / 2);
       if flat.data.len() < need {
@@ -1178,7 +1178,7 @@ impl<'a> IiqDecoder<'a> {
         let mut pump = BitPumpMSB32::new(Self::row_data(buffer, strips, row)?);
         let mut pred = [0_u32; 2];
         let mut len = [0_u32; 2];
-        for (col, pixout) in out.chunks_exact_mut(1).enumerate() {
+        for (col, pixout) in out.as_chunks_mut::<1>().0.iter_mut().enumerate() {
           if col >= (width & 0xfffffff8) {
             len[0] = 14;
             len[1] = 14;

@@ -206,7 +206,7 @@ impl GenericTiffReader {
   }
 
   pub fn little_endian(&self) -> bool {
-    self.file.chain.first().map_or(true, |f| f.endian == Endian::Little)
+    self.file.chain.first().is_none_or(|f| f.endian == Endian::Little)
   }
 
   /// Construct a TIFF reader from a byte buffer

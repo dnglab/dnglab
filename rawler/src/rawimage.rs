@@ -525,7 +525,7 @@ impl RawImage {
       clean_make: cam.clean_make.clone(),
       clean_model: cam.clean_model.clone(),
       width: pixel_width,
-      height: height,
+      height,
       cpp,
       bps: cam.real_bps,
       wb_coeffs,

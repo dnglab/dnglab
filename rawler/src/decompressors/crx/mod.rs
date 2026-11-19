@@ -11,6 +11,7 @@
 //! It has two modes:
 //!  - Lossless compression
 //!  - Lossy compression
+//!
 //! For lossless (only LL band exists) and LL band from lossy compression,
 //! prediction is used combined with adaptive Golomb-Rice entropy encoding for compression.
 //! For lossy bands other than LL a special value rounding is introduced

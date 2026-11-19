@@ -33,7 +33,7 @@ pub(crate) fn decode_panasonic_v7(buf: &[u8], width: usize, height: usize, bps: 
     dummy,
     &(|out, row| {
       let src = &buf[row * bytes_per_row..row * bytes_per_row + bytes_per_row];
-      for (block_id, block) in src.chunks_exact(V7_BYTES_PER_BLOCK).enumerate() {
+      for (block_id, block) in src.as_chunks::<V7_BYTES_PER_BLOCK>().0.iter().enumerate() {
         let start = block_id * pixels_per_block;
         let out = &mut out[start..start + pixels_per_block];
         let mut pump = BitPumpLSB::new(block);

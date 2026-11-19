@@ -54,9 +54,9 @@ impl Demosaic<f32, 3> for Superpixel3Channel {
     let out = (0..roi.height() / 2)
       .into_par_iter()
       .map(|i| {
-        let (r1, r2) = (pixels.row(2 * i), pixels.row(2 * i + 1));
-        r1.chunks_exact(2)
-          .zip(r2.chunks_exact(2))
+        let (r1, r2) = (pixels.row(2 * i).as_chunks::<2>().0, pixels.row(2 * i + 1).as_chunks::<2>().0);
+        r1.iter()
+          .zip(r2)
           .map(|(a, b)| {
             let p = [a[0], a[1], b[0], b[1]];
             match pattern {
@@ -110,9 +110,9 @@ impl Demosaic<f32, 4> for Superpixel4Channel {
     let out = (0..roi.height() / 2)
       .into_par_iter()
       .map(|i| {
-        let (r1, r2) = (pixels.row(2 * i), pixels.row(2 * i + 1));
-        r1.chunks_exact(2)
-          .zip(r2.chunks_exact(2))
+        let (r1, r2) = (pixels.row(2 * i).as_chunks::<2>().0, pixels.row(2 * i + 1).as_chunks::<2>().0);
+        r1.iter()
+          .zip(r2)
           .map(|(a, b)| {
             let superpixel = [a[0], a[1], b[0], b[1]];
             // Map superpixel into correct ordering (CFAPlaneColor)

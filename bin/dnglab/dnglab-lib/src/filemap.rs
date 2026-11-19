@@ -102,7 +102,7 @@ impl MapMode {
       }
       Ok(MapMode::Dir(DirMap::new(&input.canonicalize()?, &output.canonicalize()?)))
     } else {
-      return Err(AppError::General(format!("Unable to determine type of {}", input.display())));
+      Err(AppError::General(format!("Unable to determine type of {}", input.display())))
     }
   }
 }

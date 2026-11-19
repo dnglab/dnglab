@@ -251,7 +251,7 @@ impl<'a> KdcDecoder<'a> {
   pub(crate) fn decode_dc120_jpeg(src: &[u8], width: usize, height: usize, dummy: bool) -> Result<PixU16> {
     let mut out = alloc_image_ok!(width, height, dummy);
 
-    let swapped_src: Vec<u8> = src.chunks_exact(2).flat_map(|x| [x[1], x[0]]).collect();
+    let swapped_src: Vec<u8> = src.as_chunks::<2>().0.iter().flat_map(|x| [x[1], x[0]]).collect();
 
     let img =
       image::load_from_memory_with_format(&swapped_src, image::ImageFormat::Jpeg).map_err(|err| decoder_error!("Failed to read JPEG image: {:?}", err))?;

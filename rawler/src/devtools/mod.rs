@@ -15,7 +15,7 @@ pub fn dump_image_u16(data: &[u16], width: usize, height: usize, path: impl AsRe
     .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "image dimensions do not match data length"))?;
   img
     .save_with_format(path.as_ref(), ImageFormat::Tiff)
-    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("failed to save TIFF: {e}")))?;
+    .map_err(|e| std::io::Error::other(format!("failed to save TIFF: {e}")))?;
   Ok(())
 }
 
@@ -24,7 +24,7 @@ pub fn dump_image_u16_rgb(data: &[u16], width: usize, height: usize, path: impl 
     .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "RGB image dimensions do not match data length"))?;
   img
     .save_with_format(path.as_ref(), ImageFormat::Tiff)
-    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("failed to save TIFF: {e}")))?;
+    .map_err(|e| std::io::Error::other(format!("failed to save TIFF: {e}")))?;
   Ok(())
 }
 

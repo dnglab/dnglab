@@ -19,6 +19,7 @@ use num_enum::TryFromPrimitive;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord, TryFromPrimitive, Serialize, Deserialize)]
 #[repr(u8)]
 #[allow(non_camel_case_types)]
+#[derive(Default)]
 pub enum CFAColor {
   // see also DngDecoder
   RED = 0,
@@ -30,13 +31,8 @@ pub enum CFAColor {
   WHITE = 6,
   FUJI_GREEN = 7,
   END, // keep it last!
+  #[default]
   UNKNOWN = 255,
-}
-
-impl Default for CFAColor {
-  fn default() -> Self {
-    Self::UNKNOWN
-  }
 }
 
 impl TryFrom<char> for CFAColor {
@@ -113,7 +109,7 @@ impl<'de> Visitor<'de> for CFAPatternVisitor {
       return Err(E::invalid_length(v.len(), &self));
     }
     let mut out = [[0u8; CFA_DIM]; CFA_DIM];
-    for (row, chunk) in out.iter_mut().zip(v.chunks_exact(CFA_DIM)) {
+    for (row, chunk) in out.iter_mut().zip(v.as_chunks::<CFA_DIM>().0) {
       row.copy_from_slice(chunk);
     }
     Ok(CFAPattern(out))

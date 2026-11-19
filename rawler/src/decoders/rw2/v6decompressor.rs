@@ -11,30 +11,11 @@ pub(crate) fn decode_panasonic_v6(buf: &[u8], width: usize, height: usize, bps: 
 
   const V6_BYTES_PER_BLOCK: usize = 16;
 
-  let pixels_per_block;
-
-  let pixelbase0;
-  let pixelbase_compare;
-  let spix_compare;
-  let pixel_mask;
-
-  match bps {
-    12 => {
-      pixels_per_block = 14;
-      pixelbase0 = 0x80;
-      pixelbase_compare = 0x800;
-      spix_compare = 0x3fff;
-      pixel_mask = 0xfff;
-    }
-    14 => {
-      pixels_per_block = 11;
-      pixelbase0 = 0x200;
-      pixelbase_compare = 0x2000;
-      spix_compare = 0xffff;
-      pixel_mask = 0x3fff;
-    }
+  let (pixels_per_block, pixelbase0, pixelbase_compare, spix_compare, pixel_mask) = match bps {
+    12 => (14, 0x80, 0x800, 0x3fff, 0xfff),
+    14 => (11, 0x200, 0x2000, 0xffff, 0x3fff),
     _ => return Err(format!("RW2 v6: unsupported bit depth {}", bps)),
-  }
+  };
 
   let blocks_per_row = width / pixels_per_block;
   let bytes_per_row = V6_BYTES_PER_BLOCK * blocks_per_row;
@@ -58,7 +39,7 @@ pub(crate) fn decode_panasonic_v6(buf: &[u8], width: usize, height: usize, bps: 
     dummy,
     &(|out, row| {
       let src = &buf[row * bytes_per_row..row * bytes_per_row + bytes_per_row];
-      for (block_id, block) in src.chunks_exact(V6_BYTES_PER_BLOCK).enumerate() {
+      for (block_id, block) in src.as_chunks::<V6_BYTES_PER_BLOCK>().0.iter().enumerate() {
         let out = &mut out[block_id * pixels_per_block..];
         let mut pixelbuffer = [0_u16; 18];
 

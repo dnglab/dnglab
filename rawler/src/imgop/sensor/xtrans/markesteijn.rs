@@ -305,7 +305,7 @@ fn build_hex_lut(cfa: &CFA) -> HexLut {
             let v = ORTH[d] * PATT[g][c * 2] + ORTH[d + 1] * PATT[g][c * 2 + 1];
             let h = ORTH[d + 2] * PATT[g][c * 2] + ORTH[d + 3] * PATT[g][c * 2 + 1];
             // Slot permutation ensures direction buffer alignment across rotations
-            let slot = c ^ (g * 2 & d);
+            let slot = c ^ ((g * 2) & d);
             lut.hex[row as usize][col as usize][0][slot] = (v, h);
             lut.hex[row as usize][col as usize][1][slot] = (v, h);
           }

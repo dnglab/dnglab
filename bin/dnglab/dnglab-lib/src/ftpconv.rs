@@ -52,9 +52,7 @@ impl FtpCallback for FtpState {
       if state.params.keep_mtime {
         if let Err(err) = copy_mtime_from_rawsource(
           &rawfile,
-          &dng
-            .into_inner()
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Can't access inner file: {e}")))?,
+          &dng.into_inner().map_err(|e| std::io::Error::other(format!("Can't access inner file: {e}")))?,
           None,
           &state.params,
         ) {
@@ -64,7 +62,7 @@ impl FtpCallback for FtpState {
       Ok(!state.keep_orig)
     })
     .await
-    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("join error: {e}")))?
+    .map_err(|e| std::io::Error::other(format!("join error: {e}")))?
   }
 }
 

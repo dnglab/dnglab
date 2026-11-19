@@ -643,8 +643,8 @@ impl<'a> Cr3Decoder<'a> {
       .with_lens_keyname(self.read_lens_name()?)
       .with_camera(self.camera.metadata()) // must follow with_lens_keyname() as it my override key
       .with_lens_id(self.read_lens_id()?)
-      .with_aperture(md.ctmd_exposure.as_ref().map(|x| x.fnumber.clone()))
-      .with_focal_len(md.ctmd_focallen.clone())
+      .with_aperture(md.ctmd_exposure.as_ref().map(|x| x.fnumber))
+      .with_focal_len(md.ctmd_focallen)
       .with_mounts(&[CANON_CN_MOUNT.into(), CANON_EF_MOUNT.into(), CANON_RF_MOUNT.into()]);
     md.lens_description = resolver.resolve();
 

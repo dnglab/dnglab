@@ -165,14 +165,14 @@ impl Header {
       //|| self.lossless != 1
       || self.raw_height > 0x3000
       || (self.raw_height as usize) < Strip::line_height()
-      || (self.raw_height as usize) % Strip::line_height() != 0
+      || !(self.raw_height as usize).is_multiple_of(Strip::line_height())
       || self.raw_width > 0x3000
       || self.raw_width < 0x300
-      || self.raw_width % 24 != 0
+      || !self.raw_width.is_multiple_of(24)
       || self.raw_rounded_width > 0x3000
       || self.block_size != 0x300
       || self.raw_rounded_width < self.block_size
-      || self.raw_rounded_width % self.block_size != 0
+      || !self.raw_rounded_width.is_multiple_of(self.block_size)
       || self.raw_rounded_width - self.raw_width >= self.block_size
       || self.blocks_in_row > 0x10
       || self.blocks_in_row == 0
@@ -858,7 +858,7 @@ impl Params {
 
   /// Create new parameter
   fn new(header: &Header) -> crate::Result<Self> {
-    if (header.block_size % 3 != 0 && header.raw_type == 16) || (header.block_size & 1 != 0 && header.raw_type == 0) {
+    if (!header.block_size.is_multiple_of(3) && header.raw_type == 16) || (header.block_size & 1 != 0 && header.raw_type == 0) {
       return Err(RawlerError::decoder_failed("Invalid FUJI header: block_size is incompatible with raw_type"));
     }
     let min_value = 0x40;

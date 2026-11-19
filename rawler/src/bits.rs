@@ -8,8 +8,6 @@
 
 //! Low-level bit operations
 
-use std::iter::repeat;
-
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use serde::{Deserialize, Serialize};
 
@@ -58,16 +56,11 @@ pub fn scale_u16(p: u16, bits: u32) -> u16 {
   ((p as f32 / max as f32) * u16::MAX as f32) as u16
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub enum Endian {
   Big,
+  #[default]
   Little,
-}
-
-impl Default for Endian {
-  fn default() -> Self {
-    Self::Little
-  }
 }
 
 impl Endian {
@@ -234,7 +227,7 @@ impl LookupTable {
     } else {
       let mut expanded = Vec::with_capacity(1 << bits);
       expanded.extend_from_slice(table);
-      expanded.extend(repeat(table.last().expect("Need one element")).take((1 << bits) - table.len()));
+      expanded.extend(std::iter::repeat_n(table.last().expect("Need one element"), (1 << bits) - table.len()));
       Self::new(&expanded)
     }
   }
@@ -353,7 +346,7 @@ pub(crate) fn extend_binary_floating_point<NARROW: FloatingPointParameters, WIDE
     }
   }
 
-  return (sign << WIDE::SIGN_BIT_POS) | (wide_exponent << WIDE::EXPONENT_POS) | wide_fraction;
+  (sign << WIDE::SIGN_BIT_POS) | (wide_exponent << WIDE::EXPONENT_POS) | wide_fraction
 }
 
 #[cfg(test)]
