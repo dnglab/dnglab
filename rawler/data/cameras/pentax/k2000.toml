@@ -1,0 +1,13 @@
+make = "PENTAX"
+model = "PENTAX K2000"
+clean_make = "Pentax"
+clean_model = "K2000"
+#blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 40, 8]
+crop_area = [8, 8, 56, 24]
+
+[cameras.color_matrix]
+A = [1.1118, -0.4471, -0.0123, -0.7238, 1.4656, 0.2815, -0.0553, 0.0623, 0.8308]
+D65 = [0.9730, -0.2989, -0.0970, -0.8527, 1.6258, 0.2381, -0.1060, 0.0970, 0.8362]
