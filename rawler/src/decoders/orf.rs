@@ -46,7 +46,7 @@ use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes;
 use super::tiff_ifd;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const MFT_MOUNT: &str = "MFT-mount";
 
@@ -382,17 +382,17 @@ impl<'a> Decoder for OrfDecoder<'a> {
     }
   }
 
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
-      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
-      WellKnownIFD::Makernote => Some(Rc::new(self.full_makernote())),
+      WellKnownIFD::Raw => Some(Arc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Makernote => Some(Arc::new(self.full_makernote())),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
         self.format_hint(),
         self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes),
         Some(&self.full_makernote()),
       )
-      .map(Rc::new),
+      .map(Arc::new),
       _ => None,
     })
   }

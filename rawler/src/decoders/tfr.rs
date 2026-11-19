@@ -22,7 +22,7 @@ use super::makernotes;
 use super::tiff_ifd;
 use super::{BlackLevel, CFAConfig, CameraLookup, Decoder, FormatHint, Orientation, RawDecodeParams, RawMetadata, RawPhotometricInterpretation, WhiteLevel};
 use crate::formats::tiff::IFD;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// 3FR format encapsulation for analyzer
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
@@ -127,13 +127,13 @@ impl<'a> Decoder for TfrDecoder<'a> {
     FormatDump::Tfr(TfrFormat { tiff: self.tiff.clone() })
   }
 
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
-      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Raw => Some(Arc::new(self.get_raw_ifd()?.clone())),
       // The preview image is in IFD0
-      WellKnownIFD::Preview => Some(Rc::new(self.tiff.root_ifd().clone())),
-      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None).map(Rc::new),
+      WellKnownIFD::Preview => Some(Arc::new(self.tiff.root_ifd().clone())),
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None).map(Arc::new),
       _ => None,
     })
   }

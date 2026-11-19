@@ -6,7 +6,7 @@ use log::{debug, warn};
 use num::Zero;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::Debug;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::bits::Endian;
 use crate::decoders::makernotes::{CR3_CTMD_RECORD_BASE, MakernoteSection, VirtualMakernotes};
@@ -474,13 +474,13 @@ impl<'a> Decoder for Cr3Decoder<'a> {
     }
   }
 
-  fn ifd(&self, file: &RawSource, params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, file: &RawSource, params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       // The basic EXIF tags, the EXIF tags and the GPS tags are in separate CMT boxes
-      WellKnownIFD::Root => Some(Rc::new(self.cmt1.root_ifd().clone())),
-      WellKnownIFD::Exif => Some(Rc::new(self.cmt2.root_ifd().clone())),
-      WellKnownIFD::ExifGps => Some(Rc::new(self.cmt4.root_ifd().clone())),
-      WellKnownIFD::Makernote => Some(Rc::new(self.cmt3.root_ifd().clone())),
+      WellKnownIFD::Root => Some(Arc::new(self.cmt1.root_ifd().clone())),
+      WellKnownIFD::Exif => Some(Arc::new(self.cmt2.root_ifd().clone())),
+      WellKnownIFD::ExifGps => Some(Arc::new(self.cmt4.root_ifd().clone())),
+      WellKnownIFD::Makernote => Some(Arc::new(self.cmt3.root_ifd().clone())),
       WellKnownIFD::VirtualMakernotes => {
         let mut container = VirtualMakernotes::new(self.format_hint());
         if let Some(Cr3DescBox { cmt1, cmt2, cmt3, cmt4, .. }) = self.bmff.filebox.moov.cr3desc.as_ref() {
@@ -511,7 +511,7 @@ impl<'a> Decoder for Cr3Decoder<'a> {
             container.add_blob(tag, record.payload.clone(), blocks.build());
           }
         }
-        container.build().map(Rc::new)
+        container.build().map(Arc::new)
       }
       _ => None,
     })

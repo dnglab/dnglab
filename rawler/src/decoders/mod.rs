@@ -17,7 +17,6 @@ use std::hash::Hash;
 use std::panic;
 use std::panic::AssertUnwindSafe;
 use std::path::Path;
-use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -408,7 +407,7 @@ pub trait Decoder: Send {
 
   /// A well-known IFD of the file. Some IFDs, like the virtual makernotes of
   /// CR3 files, depend on the image that `params` selects.
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, _wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, _wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(None)
   }
 
@@ -596,7 +595,7 @@ pub(crate) fn ok_cfa_image_with_black_white(camera: Camera, cpp: usize, wb_coeff
    */
 
 /// The root, EXIF or GPS IFD of a TIFF structure, `None` for other well-known IFDs
-pub(crate) fn tiff_ifd(root: &IFD, wk_ifd: WellKnownIFD) -> Option<Rc<IFD>> {
+pub(crate) fn tiff_ifd(root: &IFD, wk_ifd: WellKnownIFD) -> Option<Arc<IFD>> {
   let sub_ifd = |tag: ExifTag| root.get_sub_ifd_all(tag).and_then(|list| list.first());
   match wk_ifd {
     WellKnownIFD::Root => Some(root),
@@ -605,7 +604,7 @@ pub(crate) fn tiff_ifd(root: &IFD, wk_ifd: WellKnownIFD) -> Option<Rc<IFD>> {
     _ => None,
   }
   .cloned()
-  .map(Rc::new)
+  .map(Arc::new)
 }
 
 pub(crate) fn dynamic_image_from_jpeg_interchange_format(ifd: &IFD, rawsource: &RawSource) -> Result<DynamicImage> {

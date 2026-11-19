@@ -19,7 +19,7 @@ use std::collections::HashMap;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::mem::size_of;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::Orientation;
 use crate::RawImage;
@@ -331,7 +331,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
     Ok(mdata)
   }
 
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     // The raw data and the makernote are not described by TIFF IFDs
     Ok(tiff_ifd(self.tiff.root_ifd(), wk_ifd))
   }

@@ -46,7 +46,7 @@ use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes::{MakernoteSection, VirtualMakernotes};
 use super::tiff_ifd;
-use std::rc::Rc;
+use std::sync::Arc;
 
 pub(crate) mod v4decompressor;
 pub(crate) mod v5decompressor;
@@ -228,17 +228,17 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     Ok(mdata)
   }
 
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
-      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Raw => Some(Arc::new(self.get_raw_ifd()?.clone())),
       WellKnownIFD::VirtualMakernotes => {
         let mut container = VirtualMakernotes::new(self.format_hint());
         container.add_exif_makernote(self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None);
         if let Some(data) = self.tiff.get_entry(PanasonicTag::CameraIFD).and_then(|entry| entry.value.get_data().ok()) {
           container.add_blob(MakernoteSection::PanasonicCameraIFD, data.to_vec(), self.camera_ifd.clone());
         }
-        container.build().map(Rc::new)
+        container.build().map(Arc::new)
       }
       _ => None,
     })

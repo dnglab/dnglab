@@ -31,7 +31,7 @@ use super::makernotes;
 use super::ok_cfa_image;
 use super::tiff_ifd;
 use crate::tags::ExifTag;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const MRW_MAGIC: u32 = 0x004D524D; // !memcmp (head,"\0MRM",4))?
 
@@ -251,10 +251,10 @@ impl<'a> Decoder for MrwDecoder<'a> {
     Ok(mdata)
   }
 
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(&self.tiff, wk_ifd),
-      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None).map(Rc::new),
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None).map(Arc::new),
       _ => None,
     })
   }
