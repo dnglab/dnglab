@@ -46,7 +46,7 @@ fn main() -> AppResult {
 /// parser and check for the correct environment.
 async fn main_async() -> dnglab_lib::Result<()> {
   // Override version and name, as we don't want these information from dnglab-lib but from this binary.
-  let app = app::create_app().version(env!("CARGO_PKG_VERSION")).name(env!("CARGO_PKG_NAME"));
+  let app = app::create_app().version(env!("DNGLAB_VERSION")).name(env!("CARGO_PKG_NAME"));
   let matches = app.try_get_matches().unwrap_or_else(|e| e.exit());
 
   let loglevel = match matches.get_one::<LogLevel>("loglevel").unwrap_or(&LogLevel::Warn) {
@@ -78,7 +78,7 @@ async fn main_async() -> dnglab_lib::Result<()> {
     .map_err(|e| AppError::General(format!("Invalid fern configuration: {e}")))?;
 
   // The written files name this binary, not dnglab-lib
-  let software = Software::new(SOFTWARE_NAME, env!("CARGO_PKG_VERSION"));
+  let software = Software::new(SOFTWARE_NAME, env!("DNGLAB_VERSION"));
 
   match matches.subcommand() {
     Some(("analyze", sc)) => analyze::analyze(sc).await,
