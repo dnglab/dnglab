@@ -42,7 +42,7 @@ use super::image_bytes;
 use super::makernotes;
 use super::ok_cfa_image_with_blacklevels;
 use super::tiff_ifd;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const NX_MOUNT: &str = "NX-mount";
 
@@ -51,7 +51,7 @@ pub struct SrwDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
-  makernote: IFD,
+  makernote: Arc<IFD>,
   camera: CameraLookup,
 }
 
@@ -79,7 +79,7 @@ impl<'a> SrwDecoder<'a> {
       tiff,
       rawloader,
       camera,
-      makernote,
+      makernote: Arc::new(makernote),
     })
   }
 }
@@ -150,17 +150,17 @@ impl<'a> Decoder for SrwDecoder<'a> {
     Ok(mdata)
   }
 
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
-      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
-      WellKnownIFD::Makernote => Some(Rc::new(self.makernote.clone())),
+      WellKnownIFD::Raw => Some(Arc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Makernote => Some(self.makernote.clone()),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
         self.format_hint(),
         self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes),
         Some(&self.makernote),
       )
-      .map(Rc::new),
+      .map(Arc::new),
       _ => None,
     })
   }

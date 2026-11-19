@@ -333,11 +333,11 @@ impl<'a> Decoder for DngDecoder<'a> {
     Ok(None)
   }
 
-  fn ifd(&self, file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
-      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
-      WellKnownIFD::Preview => self.get_preview_ifd().cloned().map(Rc::new),
+      WellKnownIFD::Raw => Some(Arc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Preview => self.get_preview_ifd().cloned().map(Arc::new),
       WellKnownIFD::VirtualDngRawTags => {
         let mut ifd = IFD::default();
         // OpcodeList1-3 are returned as stored. DNG conversion writes them from
@@ -351,7 +351,7 @@ impl<'a> Decoder for DngDecoder<'a> {
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::AntiAliasStrength);
         IFD::copy_tag(&mut ifd, self.get_raw_ifd()?, DngTag::NoiseReductionApplied);
         // ProfileGainTableMap is written from RawImage
-        Some(Rc::new(ifd))
+        Some(Arc::new(ifd))
       }
       WellKnownIFD::VirtualDngRootTags => {
         // Camera profiles, CameraCalibration, AnalogBalance, AsShotProfileName
@@ -373,9 +373,9 @@ impl<'a> Decoder for DngDecoder<'a> {
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthFar);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthUnits);
         IFD::copy_tag(&mut ifd, self.tiff.root_ifd(), DngTag::DepthMeasureType);
-        Some(Rc::new(ifd))
+        Some(Arc::new(ifd))
       }
-      WellKnownIFD::Makernote => self.exif_makernote(file).map(Rc::new),
+      WellKnownIFD::Makernote => self.exif_makernote(file).map(Arc::new),
       WellKnownIFD::VirtualMakernotes => {
         let mut container = VirtualMakernotes::new(self.format_hint());
         if self.exif_ifd().is_some_and(|exif| exif.has_entry(ExifTag::MakerNotes)) {
@@ -384,7 +384,7 @@ impl<'a> Decoder for DngDecoder<'a> {
           // The offsets in the makernote refer to the original file, it is not parsed
           container.add_makernote(endian, Some(offset), makernote.to_vec(), None);
         }
-        container.build().map(Rc::new)
+        container.build().map(Arc::new)
       }
     })
   }
@@ -2026,7 +2026,7 @@ mod tests {
   }
 
   /// Raw IFD of the DNG in `data`
-  fn raw_ifd(data: &[u8]) -> TestResult<std::rc::Rc<crate::formats::tiff::IFD>> {
+  fn raw_ifd(data: &[u8]) -> TestResult<std::sync::Arc<crate::formats::tiff::IFD>> {
     use crate::decoders::{Decoder, WellKnownIFD};
 
     Ok(
@@ -2155,7 +2155,7 @@ mod tests {
   }
 
   /// Convert the DNG in `data` to DNG and return the raw IFD of the result
-  fn convert_to_raw_ifd(data: &[u8], params: crate::dng::convert::ConvertParams) -> TestResult<std::rc::Rc<crate::formats::tiff::IFD>> {
+  fn convert_to_raw_ifd(data: &[u8], params: crate::dng::convert::ConvertParams) -> TestResult<std::sync::Arc<crate::formats::tiff::IFD>> {
     use crate::dng::convert::convert_raw_source;
 
     let params = params.with_preview(false).with_thumbnail(false);

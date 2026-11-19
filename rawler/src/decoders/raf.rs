@@ -49,7 +49,7 @@ use super::WellKnownIFD;
 use super::image_bytes;
 use super::makernotes;
 use super::tiff_ifd;
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod dbp;
 mod fuji_decompressor;
@@ -61,7 +61,7 @@ pub struct RafDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   ifd: IFD,
-  makernotes: IFD,
+  makernotes: Arc<IFD>,
   camera: CameraLookup,
   camera_compressed: Option<Camera>,
 }
@@ -252,7 +252,7 @@ impl<'a> RafDecoder<'a> {
     //makernotes.dump::<RafMakernotes>(10).iter().for_each(|line| eprintln!("MKND: {}", line));
     Ok(RafDecoder {
       ifd,
-      makernotes,
+      makernotes: Arc::new(makernotes),
       rawloader,
       camera,
       camera_compressed,
@@ -444,17 +444,17 @@ impl<'a> Decoder for RafDecoder<'a> {
     todo!()
   }
 
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(&self.ifd, wk_ifd),
-      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
-      WellKnownIFD::Makernote => Some(Rc::new(self.makernotes.clone())),
+      WellKnownIFD::Raw => Some(Arc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Makernote => Some(self.makernotes.clone()),
       WellKnownIFD::VirtualMakernotes => makernotes::from_exif(
         self.format_hint(),
         self.ifd.find_first_ifd_with_tag(ExifTag::MakerNotes),
         Some(&self.makernotes),
       )
-      .map(Rc::new),
+      .map(Arc::new),
       _ => None,
     })
   }

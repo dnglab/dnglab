@@ -32,14 +32,14 @@ use super::image_bytes;
 use super::makernotes::{MakernoteSection, VirtualMakernotes};
 use super::ok_cfa_image;
 use super::tiff_ifd;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct KdcDecoder<'a> {
   #[allow(unused)]
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
-  kdc_ifd: Option<IFD>,
+  kdc_ifd: Option<Arc<IFD>>,
   camera: CameraLookup,
 }
 
@@ -57,7 +57,7 @@ impl<'a> KdcDecoder<'a> {
       tiff,
       rawloader,
       camera,
-      kdc_ifd,
+      kdc_ifd: kdc_ifd.map(Arc::new),
     })
   }
 }
@@ -154,18 +154,18 @@ impl<'a> Decoder for KdcDecoder<'a> {
     Ok(mdata)
   }
 
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
-      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
-      WellKnownIFD::Makernote => self.kdc_ifd.clone().map(Rc::new),
+      WellKnownIFD::Raw => Some(Arc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Makernote => self.kdc_ifd.clone(),
       WellKnownIFD::VirtualMakernotes => {
         let mut container = VirtualMakernotes::new(self.format_hint());
         container.add_exif_makernote(self.tiff.find_first_ifd_with_tag(ExifTag::MakerNotes), None);
         if let (Some(entry), Some(kdc_ifd)) = (self.tiff.root_ifd().get_entry(TiffCommonTag::KdcIFD), &self.kdc_ifd) {
-          container.add_pointer_ifd(MakernoteSection::KdcIFD, entry.force_u32(0), kdc_ifd.clone());
+          container.add_pointer_ifd(MakernoteSection::KdcIFD, entry.force_u32(0), IFD::clone(kdc_ifd));
         }
-        container.build().map(Rc::new)
+        container.build().map(Arc::new)
       }
       _ => None,
     })

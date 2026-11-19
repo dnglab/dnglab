@@ -54,7 +54,7 @@ use super::dcr::kodak_blacklevel;
 use super::dcr::kodak_wb;
 use super::makernotes;
 use super::tiff_ifd;
-use std::rc::Rc;
+use std::sync::Arc;
 
 mod colordata;
 
@@ -69,7 +69,7 @@ pub struct Cr2Decoder<'a> {
   rawloader: &'a RawLoader,
   tiff: GenericTiffReader,
   exif: IFD,
-  makernote: Option<IFD>,
+  makernote: Option<Arc<IFD>>,
   #[allow(dead_code)]
   mode: Cr2Mode,
   xpacket: Option<Vec<u8>>,
@@ -333,14 +333,14 @@ impl<'a> Decoder for Cr2Decoder<'a> {
     }
   }
 
-  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Rc<IFD>>> {
+  fn ifd(&self, _file: &RawSource, _params: &RawDecodeParams, wk_ifd: WellKnownIFD) -> Result<Option<Arc<IFD>>> {
     Ok(match wk_ifd {
       WellKnownIFD::Root | WellKnownIFD::Exif | WellKnownIFD::ExifGps => tiff_ifd(self.tiff.root_ifd(), wk_ifd),
-      WellKnownIFD::Raw => Some(Rc::new(self.get_raw_ifd()?.clone())),
+      WellKnownIFD::Raw => Some(Arc::new(self.get_raw_ifd()?.clone())),
       // The full resolution preview image is in IFD0
-      WellKnownIFD::Preview => Some(Rc::new(self.tiff.root_ifd().clone())),
-      WellKnownIFD::Makernote => self.makernote.clone().map(Rc::new),
-      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), Some(&self.exif), self.makernote.as_ref()).map(Rc::new),
+      WellKnownIFD::Preview => Some(Arc::new(self.tiff.root_ifd().clone())),
+      WellKnownIFD::Makernote => self.makernote.clone(),
+      WellKnownIFD::VirtualMakernotes => makernotes::from_exif(self.format_hint(), Some(&self.exif), self.makernote.as_deref()).map(Arc::new),
       _ => None,
     })
   }
@@ -425,7 +425,7 @@ impl<'a> Cr2Decoder<'a> {
       tiff,
       rawloader,
       exif,
-      makernote,
+      makernote: makernote.map(Arc::new),
       mode,
       xpacket,
       camera,
