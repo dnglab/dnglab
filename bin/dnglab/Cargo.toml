@@ -21,11 +21,6 @@ log = "0.4"
 tokio = { version = "1.43.1", features = ["full"] }
 dnglab_lib = { path = "dnglab-lib", default-features = false }
 
-[build-dependencies]
-clap_mangen = "0.3.0"
-clap_complete = "4.4.4"
-dnglab_lib = { path = "dnglab-lib" }
-
 [lints]
 workspace = true
 
@@ -40,6 +35,8 @@ priority = "optional"
 assets = [
     ["target/release/dnglab", "usr/bin/", "755"],
     ["manpages/*", "usr/share/man/man1/", "644"],
-    ["completions/*.bash", "usr/share/bash-completion/completions/", "644"]
+    ["completions/dnglab", "usr/share/bash-completion/completions/", "644"],
+    ["completions/_dnglab", "usr/share/zsh/vendor-completions/", "644"],
+    ["completions/dnglab.fish", "usr/share/fish/vendor_completions.d/", "644"]
 ]
 

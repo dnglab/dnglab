@@ -1,0 +1,15 @@
+[package]
+authors = ["Daniel Vogelbacher <daniel@chaospixel.com>"]
+edition = "2024"
+name = "dnglab-mangen"
+version = "0.8.0"
+description = "Man page generator for dnglab, used for packaging"
+license = "LGPL-2.1"
+publish = false
+
+[dependencies]
+clap_mangen = "0.3.0"
+dnglab_lib = { path = "../dnglab-lib", default-features = false }
+
+[lints]
+workspace = true
