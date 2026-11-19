@@ -14,6 +14,7 @@ pub mod app;
 pub mod badpixels;
 pub mod camera_profiles;
 pub mod cameras;
+pub mod completions;
 pub mod config;
 pub mod convert;
 pub mod convertprofile;

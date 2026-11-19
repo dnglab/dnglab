@@ -24,6 +24,17 @@ for example `./dnglab_linux_x64 convert IMG_1234.CR2 IMG_1234.dng`.
 Windows is not officially supported, but the release assets contains a **dnglab-win-x64_vx.x.x.zip**
 file with pre-built Windows binary. Please be aware that this build is untested.
 
+### Shell completions
+
+The **.deb** packages install the man pages and the completions for bash, zsh and fish.
+For the other builds, `dnglab completions <shell>` prints the completion script for
+bash, elvish, fish, powershell or zsh, for example:
+
+````
+dnglab completions bash > ~/.local/share/bash-completion/completions/dnglab
+dnglab completions fish > ~/.config/fish/completions/dnglab.fish
+````
+
 ### JPEG XL compression
 
 JPEG XL compression (`-c jxl` or the profile `builtin_jxl`) requires libjxl 0.11 or later,

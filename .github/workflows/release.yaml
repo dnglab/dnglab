@@ -38,7 +38,11 @@ jobs:
               sudo apt-get update
               sudo apt-get install libc6-dev-arm64-cross crossbuild-essential-arm64
               rustup target add aarch64-unknown-linux-gnu
+          # The completions and man pages don't depend on the architecture,
+          # they are generated once with the binary for the runner
           build-cmd: |
+            cargo build --release -p dnglab
+            scripts/dist-assets.sh target/release/dnglab
             RUSTFLAGS="-C linker=aarch64-linux-gnu-gcc" cargo deb --no-strip -p dnglab --target=aarch64-unknown-linux-gnu && cp target/aarch64-unknown-linux-gnu/release/dnglab target/aarch64-unknown-linux-gnu/release/dnglab_linux_aarch64
             cargo deb -p dnglab && cp target/release/dnglab target/release/dnglab_linux_x64
           package-files: |

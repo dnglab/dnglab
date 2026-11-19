@@ -1,6 +1,7 @@
 [workspace]
 members = [
 	"bin/dnglab",
+	"bin/dnglab/dnglab-mangen",
 	"rawler",
 	"embedftp"
 ]

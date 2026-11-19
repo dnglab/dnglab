@@ -243,8 +243,28 @@ Example:
         .arg(arg!(markdown: --md "Markdown format output").action(ArgAction::SetTrue)),
     )
     .subcommand(makedng_command())
+    .subcommand(completions_command())
     .subcommand(Command::new("gui").about("Start GUI (not implemented)").arg_required_else_help(false))
     .subcommand(extract_command())
+}
+
+/// Subcommand completions
+fn completions_command() -> Command {
+  Command::new("completions")
+    .about("Print the shell completion script")
+    .arg_required_else_help(true)
+    .arg(
+      arg!(shell: <shell> "Shell to print the completion script for")
+        .required(true)
+        .value_parser(value_parser!(clap_complete::Shell)),
+    )
+    .long_about(
+      "Print the shell completion script to STDOUT. Examples to install it for the current user:
+
+  dnglab completions bash > ~/.local/share/bash-completion/completions/dnglab
+  dnglab completions zsh > ~/.zfunc/_dnglab   # ~/.zfunc must be in $fpath
+  dnglab completions fish > ~/.config/fish/completions/dnglab.fish",
+    )
 }
 
 /// Arguments shared by convert and ftpserver

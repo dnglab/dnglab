@@ -89,6 +89,7 @@ async fn main_async() -> dnglab_lib::Result<()> {
     Some(("ftpserver", sc)) => ftpconv::ftpserver(sc, &software).await,
     Some(("lenses", sc)) => lenses::lenses(sc).await,
     Some(("cameras", sc)) => cameras::cameras(sc).await,
+    Some(("completions", sc)) => completions::completions(sc).await,
     Some(("gui", sc)) => gui::gui(sc).await,
     _ => Err(AppError::InvalidCmdSwitch("Unknown subcommand was used".into())),
   }

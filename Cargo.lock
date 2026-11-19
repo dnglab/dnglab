@@ -651,12 +651,18 @@ dependencies = [
 name = "dnglab"
 version = "0.8.0"
 dependencies = [
- "clap_complete",
- "clap_mangen",
  "dnglab_lib",
  "fern",
  "log",
  "tokio",
+]
+
+[[package]]
+name = "dnglab-mangen"
+version = "0.8.0"
+dependencies = [
+ "clap_mangen",
+ "dnglab_lib",
 ]
 
 [[package]]
@@ -667,6 +673,7 @@ dependencies = [
  "async-trait",
  "chrono 0.4.45",
  "clap",
+ "clap_complete",
  "dirs",
  "embedftp",
  "futures",
