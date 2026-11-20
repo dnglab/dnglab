@@ -155,6 +155,19 @@ impl WaveletTransform {
     self.cur_h -= 1;
     result
   }
+
+  /// The line buffers `index`, each sliced to the width of the level.
+  /// They are distinct mutable slices of the same length, so a loop over
+  /// the width needs no bounds checks and its writes can't change the
+  /// lines it reads.
+  fn lines<const N: usize>(&mut self, index: [usize; N]) -> [&mut [i32]; N] {
+    let width = self.width;
+    self
+      .line_buf
+      .get_disjoint_mut(index)
+      .expect("line buffer indexes are distinct")
+      .map(|line| &mut line[..width])
+  }
 }
 
 impl CodecParams {
@@ -251,13 +264,15 @@ impl CodecParams {
           idwt_53_line(tile, &mut wvlt.line_buf[l2], &wvlt.band2_buf, &wvlt.band3_buf);
 
           // process H band
-          for i in 0..wvlt.width {
-            wvlt.line_buf[h0][i] = even_sample(wvlt.line_buf[l0][i], wvlt.line_buf[l1][i], wvlt.line_buf[l2][i]);
+          let [l0, l1, l2, h0] = wvlt.lines([l0, l1, l2, h0]);
+          for i in 0..h0.len() {
+            h0[i] = even_sample(l0[i], l1[i], l2[i]);
           }
         } else {
           self.idwt_53_horizontal(tile, l0, 2, wvlt);
-          for i in 0..wvlt.width {
-            wvlt.line_buf[h0][i] = even_sample_edge(wvlt.line_buf[l0][i], wvlt.line_buf[l2][i]);
+          let [l0, l2, h0] = wvlt.lines([l0, l2, h0]);
+          for i in 0..h0.len() {
+            h0[i] = even_sample_edge(l0[i], l2[i]);
           }
           self.idwt_53_filter_decode(tile, plane, params, iwt_transforms, cur_level)?;
           self.idwt_53_filter_transform(tile, plane, params, iwt_transforms, cur_level)?;
@@ -312,10 +327,11 @@ impl CodecParams {
           // process H bands
           wvlt.line_buf.swap(1, 2);
 
-          for i in 0..wvlt.width {
-            let delta = even_sample_edge(wvlt.line_buf[l0][i], wvlt.line_buf[l1][i]);
-            wvlt.line_buf[h1][i] = odd_sample(wvlt.line_buf[l1][i], wvlt.line_buf[h0][i], delta);
-            wvlt.line_buf[h2][i] = delta;
+          let [l0, l1, h0, h1, h2] = wvlt.lines([l0, l1, h0, h1, h2]);
+          for i in 0..h1.len() {
+            let delta = even_sample_edge(l0[i], l1[i]);
+            h1[i] = odd_sample(l1[i], h0[i], delta);
+            h2[i] = delta;
           }
           wvlt.cur_h += 3;
           wvlt.cur_line += 3;
@@ -326,8 +342,9 @@ impl CodecParams {
           let h0 = wvlt.flt_tap_h + 3;
           let h1 = (wvlt.flt_tap_h + 1) % 5 + 3;
 
-          for i in 0..wvlt.width {
-            wvlt.line_buf[h1][i] = odd_sample_edge(wvlt.line_buf[l2][i], wvlt.line_buf[h0][i]);
+          let [l2, h0, h1] = wvlt.lines([l2, h0, h1]);
+          for i in 0..h1.len() {
+            h1[i] = odd_sample_edge(l2[i], h0[i]);
           }
 
           // The original libraw CRX decoder copies the pointer from line_buf[2] to [1].
@@ -369,10 +386,11 @@ impl CodecParams {
       let l0 = 0;
       let l1 = 1;
       let l2 = 2;
-      for i in 0..wvlt.width {
-        let delta = even_sample(wvlt.line_buf[l0][i], wvlt.line_buf[l2][i], wvlt.line_buf[l1][i]);
-        wvlt.line_buf[h1][i] = odd_sample(wvlt.line_buf[l1][i], wvlt.line_buf[h0][i], delta);
-        wvlt.line_buf[h2][i] = delta;
+      let [l0, l1, l2, h0, h1, h2] = wvlt.lines([l0, l1, l2, h0, h1, h2]);
+      for i in 0..h1.len() {
+        let delta = even_sample(l0[i], l2[i], l1[i]);
+        h1[i] = odd_sample(l1[i], h0[i], delta);
+        h2[i] = delta;
       }
 
       if iwt_transforms[level].cur_line >= iwt_transforms[level].height - 3 && iwt_transforms[level].height & 1 == 1 {
