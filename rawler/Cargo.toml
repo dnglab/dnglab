@@ -3,7 +3,6 @@ authors = ["Daniel Vogelbacher <daniel@chaospixel.com>", "Pedro Côrte-Real <ped
 categories = ["multimedia::images"]
 description = "A library to extract images and metadata from camera raw formats"
 edition = "2024"
-homepage = "https://github.com/dnglab/dnglab"
 keywords = ["camera", "raw"]
 license = "LGPL-2.1"
 name = "rawler"
