@@ -12,6 +12,7 @@ use super::{
 use crate::decompressors::crx::{idwt::WaveletTransform, mdat::parse_header, rice::RiceDecoder};
 use itertools::izip;
 use log::debug;
+use multiversion::multiversion;
 use rayon::prelude::*;
 use std::collections::VecDeque;
 // No clock on wasm32-unknown-unknown: Instant::now() panics there.
@@ -274,6 +275,7 @@ impl CodecParams {
   }
 
   /// Decode top line without a previous K buffer
+  #[inline(always)]
   fn decode_top_line_no_ref_prev_line(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -328,6 +330,7 @@ impl CodecParams {
   }
 
   /// Decode nontop line with a previous K buffer
+  #[inline(always)]
   fn decode_nontop_line_no_ref_prev_line(&self, p: &mut BandParam) -> Result<()> {
     //println!("Decode nontop {}", p.cur_line);
     debug_assert_eq!(p.line_pos, 1);
@@ -400,6 +403,7 @@ impl CodecParams {
   /// For the first line (top) in a plane, no MED is used because
   /// there is no previous line for coeffs b, c and d.
   /// So this decoding is a simplified version from decode_nontop_line().
+  #[inline(always)]
   fn decode_top_line(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -447,6 +451,7 @@ impl CodecParams {
   /// Golomb-Rice becomes more efficient when using an adaptive K value
   /// instead of a fixed one.
   /// The K parameter is used as q = n >> k where n is the sample to encode.
+  #[inline(always)]
   fn decode_nontop_line(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -505,6 +510,7 @@ impl CodecParams {
 
   /// Decode a symbol x in rounded mode.
   /// Used only when levels==0 (lossless mode)
+  #[inline(always)]
   fn decode_symbol_rounded(&self, p: &mut BandParam, use_med: bool, not_eol: bool) -> Result<()> {
     let sym = if use_med { med(p.coeff_a(), p.coeff_b(), p.coeff_c()) } else { p.coeff_b() };
     let bit_code = p.rice.adaptive_rice_decode(false, PREDICT_K_ESCAPE, PREDICT_K_ESCBITS, PREDICT_K_MAX)?;
@@ -528,6 +534,7 @@ impl CodecParams {
   }
 
   /// Decode a rounded line which is not a top line
+  #[inline(always)]
   fn decode_top_line_rounded(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -577,6 +584,7 @@ impl CodecParams {
   /// instead of a fixed one.
   /// The K parameter is used as q = n >> k where n is the sample to encode.
   #[allow(clippy::comparison_chain)]
+  #[inline(always)]
   fn decode_nontop_line_rounded(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -641,43 +649,52 @@ impl CodecParams {
   /// For non-LL bands, decoding process differs a little bit
   /// because some value rounding is added.
   pub(super) fn decode_line(&self, param: &mut BandParam) -> Result<()> {
-    debug_assert!(param.cur_line < param.subband_height);
-    // We start at first real pixel value
-    param.line_pos = 1;
-    if param.cur_line == 0 {
-      param.s_param = 0;
-      param.rice.set_k(0); // TODO: required?
-      if param.supports_partial {
-        if param.rounded_bits_mask <= 0 {
-          self.decode_top_line(param)?;
-        } else {
-          param.rounded_bits = 1;
-          if (param.rounded_bits_mask & !1) != 0 {
-            while param.rounded_bits_mask >> param.rounded_bits != 0 {
-              param.rounded_bits += 1;
-            }
-          }
-          self.decode_top_line_rounded(param)?;
-        }
-      } else {
-        self.decode_top_line_no_ref_prev_line(param)?;
-      }
-    } else if !param.supports_partial {
-      // Swap line buffers so previous decoded (1) is now above (0)
-      param.line_buf.swap(0, 1);
-      self.decode_nontop_line_no_ref_prev_line(param)?;
-    } else if param.rounded_bits_mask <= 0 {
-      // Swap line buffers so previous decoded (1) is now above (0)
-      param.line_buf.swap(0, 1);
-      self.decode_nontop_line(param)?;
-    } else {
-      // Swap line buffers so previous decoded (1) is now above (0)
-      param.line_buf.swap(0, 1);
-      self.decode_nontop_line_rounded(param)?;
-    }
-    param.cur_line += 1;
-    Ok(())
+    decode_band_line(self, param)
   }
+}
+
+/// [`CodecParams::decode_line`], built for more instruction sets
+///
+/// The Golomb-Rice decoding of the samples is scalar code with many
+/// variable shifts and a leading zero count, it gains from BMI2 and LZCNT.
+#[multiversion(targets("x86_64+bmi2+lzcnt"))]
+fn decode_band_line(codec: &CodecParams, param: &mut BandParam) -> Result<()> {
+  debug_assert!(param.cur_line < param.subband_height);
+  // We start at first real pixel value
+  param.line_pos = 1;
+  if param.cur_line == 0 {
+    param.s_param = 0;
+    param.rice.set_k(0); // TODO: required?
+    if param.supports_partial {
+      if param.rounded_bits_mask <= 0 {
+        codec.decode_top_line(param)?;
+      } else {
+        param.rounded_bits = 1;
+        if (param.rounded_bits_mask & !1) != 0 {
+          while param.rounded_bits_mask >> param.rounded_bits != 0 {
+            param.rounded_bits += 1;
+          }
+        }
+        codec.decode_top_line_rounded(param)?;
+      }
+    } else {
+      codec.decode_top_line_no_ref_prev_line(param)?;
+    }
+  } else if !param.supports_partial {
+    // Swap line buffers so previous decoded (1) is now above (0)
+    param.line_buf.swap(0, 1);
+    codec.decode_nontop_line_no_ref_prev_line(param)?;
+  } else if param.rounded_bits_mask <= 0 {
+    // Swap line buffers so previous decoded (1) is now above (0)
+    param.line_buf.swap(0, 1);
+    codec.decode_nontop_line(param)?;
+  } else {
+    // Swap line buffers so previous decoded (1) is now above (0)
+    param.line_buf.swap(0, 1);
+    codec.decode_nontop_line_rounded(param)?;
+  }
+  param.cur_line += 1;
+  Ok(())
 }
 
 /// Constrain a given value into min/max
