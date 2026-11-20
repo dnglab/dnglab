@@ -10,6 +10,35 @@ use super::{
   mdat::{Plane, Tile},
 };
 
+/// Even sample of the inverse 5/3 lifting: the low-pass value minus the
+/// rounded mean of the two neighboring high-pass values,
+/// `floor((h0 + h1 + 2) / 4)`
+#[inline(always)]
+fn even_sample(low: i32, h0: i32, h1: i32) -> i32 {
+  low - ((h0 + h1 + 2) >> 2)
+}
+
+/// [`even_sample`] at a border without a neighboring tile, where the
+/// missing high-pass neighbor is mirrored (`h0 == h1 == h`)
+#[inline(always)]
+fn even_sample_edge(low: i32, h: i32) -> i32 {
+  low - ((h + 1) >> 1)
+}
+
+/// Odd sample of the inverse 5/3 lifting: the high-pass value plus the
+/// mean of the two neighboring even samples, `floor((e0 + e1) / 2)`
+#[inline(always)]
+fn odd_sample(high: i32, e0: i32, e1: i32) -> i32 {
+  high + ((e0 + e1) >> 1)
+}
+
+/// [`odd_sample`] at a border without a neighboring tile, where the
+/// missing even neighbor is mirrored (`e0 == e1 == e`)
+#[inline(always)]
+fn odd_sample_edge(high: i32, e: i32) -> i32 {
+  high + e
+}
+
 /// This structure holds the inverse transformation state
 /// Each level has it's own state, so for 3 levels of DWT
 /// 3 instances are required.
@@ -181,13 +210,13 @@ impl CodecParams {
     } else {
       if tile.tiles_left {
         // Untested
-        wvlt.line_buf[la][0] = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-        wvlt.line_buf[lb][0] = wvlt.band2(0) - ((wvlt.band3(0) + wvlt.band3(1) + 2) >> 2);
+        wvlt.line_buf[la][0] = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+        wvlt.line_buf[lb][0] = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
         wvlt.band1_pos += 1;
         wvlt.band3_pos += 1;
       } else {
-        wvlt.line_buf[la][0] = wvlt.band0(0) - ((wvlt.band1(0) + 1) >> 1);
-        wvlt.line_buf[lb][0] = wvlt.band2(0) - ((wvlt.band3(0) + 1) >> 1);
+        wvlt.line_buf[la][0] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
+        wvlt.line_buf[lb][0] = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
       }
       wvlt.band0_pos += 1;
       wvlt.band2_pos += 1;
@@ -196,12 +225,12 @@ impl CodecParams {
       for _i in (0..(wvlt.width - 3)).step_by(2) {
         //println!("val: {}, band1_pos: {}, band1_size: {}", _i, wvlt.band1_pos, wvlt.band1_buf.len());
 
-        let delta = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-        wvlt.line_buf[la][lapos + 1] = wvlt.band1(0) + ((delta + wvlt.line_buf[la][lapos]) >> 1);
+        let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+        wvlt.line_buf[la][lapos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[la][lapos], delta);
         wvlt.line_buf[la][lapos + 2] = delta;
 
-        let delta = wvlt.band2(0) - ((wvlt.band3(0) + wvlt.band3(1) + 2) >> 2);
-        wvlt.line_buf[lb][lbpos + 1] = wvlt.band3(0) + ((delta + wvlt.line_buf[lb][lbpos]) >> 1);
+        let delta = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
+        wvlt.line_buf[lb][lbpos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[lb][lbpos], delta);
         wvlt.line_buf[lb][lbpos + 2] = delta;
 
         wvlt.advance_bufs(1);
@@ -211,25 +240,25 @@ impl CodecParams {
       }
       if tile.tiles_right {
         // Untested
-        let delta_a = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-        wvlt.line_buf[la][lapos + 1] = wvlt.band1(0) + ((delta_a + wvlt.line_buf[la][lapos + 0]) >> 1);
+        let delta_a = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+        wvlt.line_buf[la][lapos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[la][lapos + 0], delta_a);
 
-        let delta_b = wvlt.band2(0) - ((wvlt.band3(0) + wvlt.band3(1) + 2) >> 2);
-        wvlt.line_buf[lb][lbpos + 1] = wvlt.band3(0) + ((delta_b + wvlt.line_buf[lb][lbpos + 0]) >> 1);
+        let delta_b = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
+        wvlt.line_buf[lb][lbpos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[lb][lbpos + 0], delta_b);
 
         if wvlt.width & 1 == 1 {
           wvlt.line_buf[la][lapos + 2] = delta_a;
           wvlt.line_buf[lb][lbpos + 2] = delta_b;
         }
       } else if wvlt.width & 1 == 1 {
-        wvlt.line_buf[la][lapos + 1] = wvlt.band1(0) + ((wvlt.line_buf[la][lapos] + wvlt.band0(0) - ((wvlt.band1(0) + 1) >> 1)) >> 1);
-        wvlt.line_buf[la][lapos + 2] = wvlt.band0(0) - ((wvlt.band1(0) + 1) >> 1);
+        wvlt.line_buf[la][lapos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[la][lapos], even_sample_edge(wvlt.band0(0), wvlt.band1(0)));
+        wvlt.line_buf[la][lapos + 2] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
 
-        wvlt.line_buf[lb][lbpos + 1] = wvlt.band3(0) + ((wvlt.line_buf[lb][lbpos] + wvlt.band2(0) - ((wvlt.band3(0) + 1) >> 1)) >> 1);
-        wvlt.line_buf[lb][lbpos + 2] = wvlt.band2(0) - ((wvlt.band3(0) + 1) >> 1);
+        wvlt.line_buf[lb][lbpos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[lb][lbpos], even_sample_edge(wvlt.band2(0), wvlt.band3(0)));
+        wvlt.line_buf[lb][lbpos + 2] = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
       } else {
-        wvlt.line_buf[la][lapos + 1] = wvlt.line_buf[la][lapos + 0] + wvlt.band1(0);
-        wvlt.line_buf[lb][lbpos + 1] = wvlt.line_buf[lb][lbpos + 0] + wvlt.band3(0);
+        wvlt.line_buf[la][lapos + 1] = odd_sample_edge(wvlt.band1(0), wvlt.line_buf[la][lapos + 0]);
+        wvlt.line_buf[lb][lbpos + 1] = odd_sample_edge(wvlt.band3(0), wvlt.line_buf[lb][lbpos + 0]);
       }
     }
   }
@@ -281,16 +310,16 @@ impl CodecParams {
             wvlt.line_buf[l2][0] = wvlt.band2(0);
           } else {
             if tile.tiles_left {
-              wvlt.line_buf[l2][0] = wvlt.band2(0) - ((wvlt.band3(0) + wvlt.band3(1) + 2) >> 2);
+              wvlt.line_buf[l2][0] = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
               wvlt.band3_pos += 1;
             } else {
-              wvlt.line_buf[l2][0] = wvlt.band2(0) - ((wvlt.band3(0) + 1) >> 1);
+              wvlt.line_buf[l2][0] = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
             }
             wvlt.band2_pos += 1;
 
             for _i in (0..wvlt.width - 3).step_by(2) {
-              let delta = wvlt.band2(0) - ((wvlt.band3(0) + wvlt.band3(1) + 2) >> 2);
-              wvlt.line_buf[l2][1] = wvlt.band3(0) + ((wvlt.line_buf[l2][l2_pos] + delta) >> 1);
+              let delta = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
+              wvlt.line_buf[l2][1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l2][l2_pos], delta);
               wvlt.line_buf[l2][2] = delta;
               wvlt.band2_pos += 1;
               wvlt.band3_pos += 1;
@@ -298,28 +327,28 @@ impl CodecParams {
             }
 
             if tile.tiles_right {
-              let delta = wvlt.band2(0) - ((wvlt.band3(0) + wvlt.band3(1) + 2) >> 2);
-              wvlt.line_buf[l2][l2_pos + 1] = wvlt.band3(0) + ((wvlt.line_buf[l2][l2_pos + 0] + delta) >> 1);
+              let delta = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
+              wvlt.line_buf[l2][l2_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l2][l2_pos + 0], delta);
               if wvlt.width & 1 == 1 {
                 wvlt.line_buf[l2][l2_pos + 1] = delta;
               }
             } else if wvlt.width & 1 == 1 {
-              let delta = wvlt.band2(0) - ((wvlt.band3(0) + 1) >> 1);
-              wvlt.line_buf[l2][l2_pos + 1] = wvlt.band3(0) + ((wvlt.line_buf[l2][l2_pos + 0] + delta) >> 1);
+              let delta = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
+              wvlt.line_buf[l2][l2_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l2][l2_pos + 0], delta);
               wvlt.line_buf[l2][l2_pos + 2] = delta;
             } else {
-              wvlt.line_buf[l2][l2_pos + 1] = wvlt.band3(0) + wvlt.line_buf[l2][l2_pos + 0];
+              wvlt.line_buf[l2][l2_pos + 1] = odd_sample_edge(wvlt.band3(0), wvlt.line_buf[l2][l2_pos + 0]);
             }
           }
 
           // process H band
           for i in 0..wvlt.width {
-            wvlt.line_buf[h0][i] = wvlt.line_buf[l0][i] - ((wvlt.line_buf[l1][i] + wvlt.line_buf[l2][i] + 2) >> 2);
+            wvlt.line_buf[h0][i] = even_sample(wvlt.line_buf[l0][i], wvlt.line_buf[l1][i], wvlt.line_buf[l2][i]);
           }
         } else {
           self.idwt_53_horizontal(tile, l0, 2, wvlt);
           for i in 0..wvlt.width {
-            wvlt.line_buf[h0][i] = wvlt.line_buf[l0][i] - ((wvlt.line_buf[l2][i] + 1) >> 1);
+            wvlt.line_buf[h0][i] = even_sample_edge(wvlt.line_buf[l0][i], wvlt.line_buf[l2][i]);
           }
           self.idwt_53_filter_decode(tile, plane, params, iwt_transforms, cur_level)?;
           self.idwt_53_filter_transform(tile, plane, params, iwt_transforms, cur_level)?;
@@ -335,16 +364,16 @@ impl CodecParams {
           wvlt.line_buf[h0][0] = wvlt.band0(0);
         } else {
           if tile.tiles_left {
-            wvlt.line_buf[h0][h0_pos] = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
+            wvlt.line_buf[h0][h0_pos] = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
             wvlt.band1_pos += 1;
           } else {
-            wvlt.line_buf[h0][h0_pos] = wvlt.band0(0) - ((wvlt.band1(0) + 1) >> 1);
+            wvlt.line_buf[h0][h0_pos] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
           }
           wvlt.band0_pos += 1;
 
           for _i in (0..(wvlt.width - 3)).step_by(2) {
-            let delta = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-            wvlt.line_buf[h0][h0_pos + 1] = wvlt.band1(0) + ((wvlt.line_buf[h0][h0_pos + 0] + delta) >> 1);
+            let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+            wvlt.line_buf[h0][h0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[h0][h0_pos + 0], delta);
             wvlt.line_buf[h0][h0_pos + 2] = delta;
             wvlt.band0_pos += 1;
             wvlt.band1_pos += 1;
@@ -353,15 +382,15 @@ impl CodecParams {
 
           if tile.tiles_right {
             // untested
-            let delta = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-            wvlt.line_buf[h0][h0_pos + 1] = wvlt.band1(0) + ((wvlt.line_buf[h0][h0_pos + 0] + delta) >> 1);
+            let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+            wvlt.line_buf[h0][h0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[h0][h0_pos + 0], delta);
             wvlt.line_buf[h0][h0_pos + 2] = delta;
           } else if wvlt.width & 1 == 1 {
-            let delta = wvlt.band0(0) - ((wvlt.band1(0) + 1) >> 1);
-            wvlt.line_buf[h0][h0_pos + 1] = wvlt.band1(0) + ((wvlt.line_buf[h0][h0_pos + 0] + delta) >> 1);
+            let delta = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
+            wvlt.line_buf[h0][h0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[h0][h0_pos + 0], delta);
             wvlt.line_buf[h0][h0_pos + 2] = delta;
           } else {
-            wvlt.line_buf[h0][h0_pos + 1] = wvlt.band1(0) + wvlt.line_buf[h0][h0_pos + 0];
+            wvlt.line_buf[h0][h0_pos + 1] = odd_sample_edge(wvlt.band1(0), wvlt.line_buf[h0][h0_pos + 0]);
           }
         }
         wvlt.cur_line += 1;
@@ -410,15 +439,15 @@ impl CodecParams {
           } else {
             if tile.tiles_left {
               // untested
-              wvlt.line_buf[l0][l0_pos] = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
+              wvlt.line_buf[l0][l0_pos] = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
               wvlt.band1_pos += 1;
             } else {
-              wvlt.line_buf[l0][l0_pos] = wvlt.band0(0) - ((wvlt.band1(0) + 1) >> 1);
+              wvlt.line_buf[l0][l0_pos] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
             }
             wvlt.band0_pos += 1;
             for _i in (0..(wvlt.width - 3)).step_by(2) {
-              let delta = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-              wvlt.line_buf[l0][l0_pos + 1] = wvlt.band1(0) + ((wvlt.line_buf[l0][l0_pos + 0] + delta) >> 1);
+              let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+              wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
               wvlt.line_buf[l0][l0_pos + 2] = delta;
               wvlt.band0_pos += 1;
               wvlt.band1_pos += 1;
@@ -426,17 +455,17 @@ impl CodecParams {
             }
             if tile.tiles_right {
               // untested
-              let delta = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-              wvlt.line_buf[l0][l0_pos + 1] = wvlt.band1(0) + ((wvlt.line_buf[l0][l0_pos + 0] + delta) >> 1);
+              let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+              wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
               if wvlt.width & 1 == 1 {
                 wvlt.line_buf[l0][l0_pos + 2] = delta;
               }
             } else if wvlt.width & 1 == 1 {
-              let delta = wvlt.band0(0) - ((wvlt.band1(0) + 1) >> 1);
-              wvlt.line_buf[l0][l0_pos + 1] = wvlt.band1(0) + ((wvlt.line_buf[l0][l0_pos + 0] + delta) >> 1);
+              let delta = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
+              wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
               wvlt.line_buf[l0][l0_pos + 2] = delta;
             } else {
-              wvlt.line_buf[l0][l0_pos + 1] = wvlt.band1(0) + wvlt.line_buf[l0][l0_pos + 0];
+              wvlt.line_buf[l0][l0_pos + 1] = odd_sample_edge(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0]);
             }
           }
 
@@ -446,8 +475,8 @@ impl CodecParams {
           wvlt.line_buf.swap(1, 2);
 
           for i in 0..wvlt.width {
-            let delta = wvlt.line_buf[l0][i] - ((wvlt.line_buf[l1][i] + 1) >> 1);
-            wvlt.line_buf[h1][i] = wvlt.line_buf[l1][i] + ((delta + wvlt.line_buf[h0][i]) >> 1);
+            let delta = even_sample_edge(wvlt.line_buf[l0][i], wvlt.line_buf[l1][i]);
+            wvlt.line_buf[h1][i] = odd_sample(wvlt.line_buf[l1][i], wvlt.line_buf[h0][i], delta);
             wvlt.line_buf[h2][i] = delta;
           }
           wvlt.cur_h += 3;
@@ -460,7 +489,7 @@ impl CodecParams {
           let h1 = (wvlt.flt_tap_h + 1) % 5 + 3;
 
           for i in 0..wvlt.width {
-            wvlt.line_buf[h1][i] = wvlt.line_buf[h0][i] + wvlt.line_buf[l2][i];
+            wvlt.line_buf[h1][i] = odd_sample_edge(wvlt.line_buf[l2][i], wvlt.line_buf[h0][i]);
           }
 
           // The original libraw CRX decoder copies the pointer from line_buf[2] to [1].
@@ -503,22 +532,22 @@ impl CodecParams {
       } else {
         // untested
         if tile.tiles_left {
-          wvlt.line_buf[l0][0] = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-          wvlt.line_buf[l1][0] = wvlt.band2(0) - ((wvlt.band3(0) + wvlt.band3(1) + 2) >> 2);
+          wvlt.line_buf[l0][0] = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+          wvlt.line_buf[l1][0] = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
           wvlt.band1_pos += 1;
           wvlt.band3_pos += 1;
         } else {
-          wvlt.line_buf[l0][0] = wvlt.band0(0) - ((wvlt.band1(0) + 1) >> 1);
-          wvlt.line_buf[l1][0] = wvlt.band2(0) - ((wvlt.band3(0) + 1) >> 1);
+          wvlt.line_buf[l0][0] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
+          wvlt.line_buf[l1][0] = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
         }
         wvlt.band0_pos += 1;
         wvlt.band2_pos += 1;
         for _i in (0..(wvlt.width - 3)).step_by(2) {
-          let delta = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-          wvlt.line_buf[l0][l0_pos + 1] = wvlt.band1(0) + ((delta + wvlt.line_buf[l0][l0_pos + 0]) >> 1);
+          let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+          wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
           wvlt.line_buf[l0][l0_pos + 2] = delta;
-          let delta = wvlt.band2(0) - ((wvlt.band3(0) + wvlt.band3(1) + 2) >> 2);
-          wvlt.line_buf[l1][l1_pos + 1] = wvlt.band3(0) + ((delta + wvlt.line_buf[l1][l1_pos + 0]) >> 1);
+          let delta = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
+          wvlt.line_buf[l1][l1_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l1][l1_pos + 0], delta);
           wvlt.line_buf[l1][l1_pos + 2] = delta;
           wvlt.advance_bufs(1);
           l0_pos += 2;
@@ -526,27 +555,27 @@ impl CodecParams {
         }
         if tile.tiles_right {
           // untested
-          let delta_a = wvlt.band0(0) - ((wvlt.band1(0) + wvlt.band1(1) + 2) >> 2);
-          wvlt.line_buf[l0][l0_pos + 1] = wvlt.band1(0) + ((delta_a + wvlt.line_buf[l0][l0_pos + 0]) >> 1);
+          let delta_a = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
+          wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta_a);
 
-          let delta_b = wvlt.band2(0) - ((wvlt.band3(0) + wvlt.band3(1) + 2) >> 2);
-          wvlt.line_buf[l1][l1_pos + 1] = wvlt.band3(0) + ((delta_b + wvlt.line_buf[l1][l1_pos + 0]) >> 1);
+          let delta_b = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
+          wvlt.line_buf[l1][l1_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l1][l1_pos + 0], delta_b);
 
           if wvlt.width & 1 == 1 {
             wvlt.line_buf[l0][l0_pos + 2] = delta_a;
             wvlt.line_buf[l1][l1_pos + 2] = delta_b;
           }
         } else if wvlt.width & 1 == 1 {
-          let delta = wvlt.band0(0) - ((wvlt.band1(0) + 1) >> 1);
-          wvlt.line_buf[l0][l0_pos + 1] = wvlt.band1(0) + ((delta + wvlt.line_buf[l0][l0_pos + 0]) >> 1);
+          let delta = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
+          wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
           wvlt.line_buf[l0][l0_pos + 2] = delta;
 
-          let delta = wvlt.band2(0) - ((wvlt.band3(0) + 1) >> 1);
-          wvlt.line_buf[l1][l1_pos + 1] = wvlt.band3(0) + ((delta + wvlt.line_buf[l1][l1_pos + 0]) >> 1);
+          let delta = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
+          wvlt.line_buf[l1][l1_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l1][l1_pos + 0], delta);
           wvlt.line_buf[l1][l1_pos + 2] = delta;
         } else {
-          wvlt.line_buf[l0][l0_pos + 1] = wvlt.line_buf[l0][l0_pos] + wvlt.band1(0);
-          wvlt.line_buf[l1][l1_pos + 1] = wvlt.line_buf[l1][l1_pos] + wvlt.band3(0);
+          wvlt.line_buf[l0][l0_pos + 1] = odd_sample_edge(wvlt.band1(0), wvlt.line_buf[l0][l0_pos]);
+          wvlt.line_buf[l1][l1_pos + 1] = odd_sample_edge(wvlt.band3(0), wvlt.line_buf[l1][l1_pos]);
         }
       }
 
@@ -559,8 +588,8 @@ impl CodecParams {
       let l1 = 1;
       let l2 = 2;
       for i in 0..wvlt.width {
-        let delta = wvlt.line_buf[l0][i] - ((wvlt.line_buf[l2][i] + wvlt.line_buf[l1][i] + 2) >> 2);
-        wvlt.line_buf[h1][i] = wvlt.line_buf[l1][i] + ((delta + wvlt.line_buf[h0][i]) >> 1);
+        let delta = even_sample(wvlt.line_buf[l0][i], wvlt.line_buf[l2][i], wvlt.line_buf[l1][i]);
+        wvlt.line_buf[h1][i] = odd_sample(wvlt.line_buf[l1][i], wvlt.line_buf[h0][i], delta);
         wvlt.line_buf[h2][i] = delta;
       }
 
