@@ -762,8 +762,9 @@ impl CodecParams {
 /// [`CodecParams::convert_cfa_line`], built for more instruction sets
 ///
 /// The conversion is vectorized. The one of `enc_type` 3 multiplies 32 bit
-/// values, which AVX2 does with 8 lanes and without emulation.
-#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
+/// values, which AVX2 does with 8 lanes and AVX-512 with 16, both without
+/// emulation.
+#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn cfa_line_from_planes(codec: &CodecParams, lines: [&[i32]; 4], row_shift: usize, cfa_row: &mut [u16]) -> Result<()> {
   let [l0, l1, l2, l3] = lines;
   let pixels = izip!(cfa_row.as_chunks_mut::<2>().0, l0, l1, l2, l3);
