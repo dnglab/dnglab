@@ -151,11 +151,9 @@ impl<'a> Decoder for DngDecoder<'a> {
 
     let mut cam = self.make_camera(raw, width, height, photometric_int)?;
     // If we know the camera, re-use the clean names
-    if let Ok(known_cam) = self
-      .rawloader
-      .check_supported_with_mode(self.tiff.root_ifd(), "dng")
-      .or_else(|_| self.rawloader.check_supported(self.tiff.root_ifd()))
-    {
+    // DNG files carry their own calibration data, so unsupported cameras qualify, too
+    let known_cam = |mode| self.rawloader.known_camera_with_mode(self.tiff.root_ifd(), mode).ok().flatten();
+    if let Some(known_cam) = known_cam("dng").or_else(|| known_cam("")).cloned() {
       cam.clean_make = known_cam.clean_make;
       cam.clean_model = known_cam.clean_model;
       cam.unique_camera_model = known_cam.unique_camera_model;
@@ -306,9 +304,9 @@ impl<'a> Decoder for DngDecoder<'a> {
     let photometric_int = fetch_tiff_tag!(raw, TiffCommonTag::PhotometricInt).force_u32(0);
     let mut cam = self.make_camera(raw, width, height, photometric_int)?;
     // If we know the camera, re-use the clean names
-    if let Ok(known_cam) = self.rawloader.check_supported(self.tiff.root_ifd()) {
-      cam.clean_make = known_cam.clean_make;
-      cam.clean_model = known_cam.clean_model;
+    if let Some(known_cam) = self.rawloader.known_camera_with_mode(self.tiff.root_ifd(), "").ok().flatten() {
+      cam.clean_make = known_cam.clean_make.clone();
+      cam.clean_model = known_cam.clean_model.clone();
     }
     let exif = Exif::new(self.tiff.root_ifd())?;
     let mdata = RawMetadata::new(&cam, exif);

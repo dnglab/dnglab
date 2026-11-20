@@ -128,7 +128,7 @@ mod unwrapped;
 pub mod x3f;
 
 pub(crate) use camera::CameraLookup;
-pub use camera::{BestQualityScale, Camera, DefaultScale};
+pub use camera::{BestQualityScale, Camera, DefaultScale, UnsupportedReason};
 
 use crate::RawlerError;
 use crate::formats::bmff::Bmff;
@@ -1114,7 +1114,7 @@ impl RawLoader {
     let mut naked = HashMap::new();
     for cam in cams {
       map.insert((cam.make.clone(), cam.model.clone(), cam.mode.clone()), cam.clone());
-      if cam.filesize > 0 {
+      if cam.filesize > 0 && cam.unsupported.is_none() {
         naked.insert(cam.filesize, cam);
       }
     }
@@ -1256,6 +1256,7 @@ impl RawLoader {
                   .and_then(|entry| entry.as_string().cloned())
                   .unwrap_or_default(),
                 mode: String::new(),
+                reason: None,
               });
             }
           }
@@ -1284,18 +1285,35 @@ impl RawLoader {
       model: "".to_string(),
       make: "".to_string(),
       mode: "".to_string(),
+      reason: None,
     })
+  }
+
+  /// Camera of the database, supported or marked as unsupported
+  fn known_camera_with_everything(&self, make: &str, model: &str, mode: &str) -> Option<&Camera> {
+    self.cameras.get(&(make.to_string(), model.to_string(), mode.to_string()))
+  }
+
+  /// Camera of the database for the make and model of `ifd0`, supported or marked as unsupported
+  fn known_camera_with_mode(&self, ifd0: &IFD, mode: &str) -> Result<Option<&Camera>> {
+    let make = fetch_tiff_tag!(ifd0, TiffCommonTag::Make).get_string()?.trim_end();
+    let model = fetch_tiff_tag!(ifd0, TiffCommonTag::Model).get_string()?.trim_end();
+    Ok(self.known_camera_with_everything(make, model, mode))
   }
 
   /// Check support
   fn check_supported_with_everything<'a>(&'a self, make: &str, model: &str, mode: &str) -> Result<Camera> {
-    match self.cameras.get(&(make.to_string(), model.to_string(), mode.to_string())) {
-      Some(cam) => Ok(cam.clone()),
+    match self.known_camera_with_everything(make, model, mode) {
+      Some(cam) => match cam.unsupported {
+        Some(reason) => Err(RawlerError::unsupported_camera(cam, reason)),
+        None => Ok(cam.clone()),
+      },
       None => Err(RawlerError::Unsupported {
         what: String::from("Unknown camera"),
         model: model.to_string(),
         make: make.to_string(),
         mode: mode.to_string(),
+        reason: None,
       }),
     }
   }
@@ -1314,24 +1332,27 @@ impl RawLoader {
   /// Look up a camera, unknown cameras get a generic definition that only
   /// serves metadata.
   fn lookup_camera_with_everything(&self, make: &str, model: &str, mode: &str) -> CameraLookup {
-    if let Ok(camera) = self.check_supported_with_everything(make, model, mode) {
-      return CameraLookup::new_supported(camera);
+    if let Some(camera) = self.known_camera_with_everything(make, model, mode) {
+      return match camera.unsupported {
+        Some(reason) => CameraLookup::new_unsupported(camera.clone(), reason),
+        None => CameraLookup::new_supported(camera.clone()),
+      };
     }
     // If only the mode is unknown, the base camera still provides clean names
-    let mut camera = self
-      .cameras
-      .get(&(make.to_string(), model.to_string(), String::new()))
-      .cloned()
-      .unwrap_or_else(|| {
-        let mut camera = Camera::new();
-        camera.make = make.to_string();
-        camera.model = model.to_string();
-        camera.clean_make = make.to_string();
-        camera.clean_model = model.to_string();
-        camera
-      });
+    let mut camera = self.known_camera_with_everything(make, model, "").cloned().unwrap_or_else(|| {
+      let mut camera = Camera::new();
+      camera.make = make.to_string();
+      camera.model = model.to_string();
+      camera.clean_make = make.to_string();
+      camera.clean_model = model.to_string();
+      camera
+    });
     camera.mode = mode.to_string();
-    CameraLookup::new_unknown(camera)
+    // The reason of an unsupported base camera applies to all of its modes
+    match camera.unsupported {
+      Some(reason) => CameraLookup::new_unsupported(camera, reason),
+      None => CameraLookup::new_unknown(camera),
+    }
   }
 
   fn lookup_camera_with_mode(&self, ifd0: &IFD, mode: &str) -> Result<CameraLookup> {

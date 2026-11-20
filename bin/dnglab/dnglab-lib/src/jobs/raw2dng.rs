@@ -8,7 +8,7 @@ use chrono::Local;
 use log::debug;
 use rawler::{
   RawlerError,
-  decoders::RawDecodeParams,
+  decoders::{RawDecodeParams, UnsupportedReason},
   dng::convert::{ConvertParams, convert_raw_file},
   rawsource::RawSource,
 };
@@ -120,12 +120,18 @@ impl Raw2DngJob {
       }
       Err(err) => {
         match &err {
-          RawlerError::Unsupported { .. } => {
+          RawlerError::Unsupported {
+            reason: None | Some(UnsupportedReason::MissingSamples),
+            ..
+          } => {
             log::error!(
               "Unsupported file: \"{}\"\n{}\nPlease see https://github.com/dnglab/dnglab/blob/main/CONTRIBUTE_SAMPLES.md how to contribute samples to get this camera supported.",
               orig_filename,
               err
             );
+          }
+          RawlerError::Unsupported { .. } => {
+            log::error!("Unsupported file: \"{}\"\n{}", orig_filename, err);
           }
           RawlerError::DecoderFailed { .. } => {
             log::error!("Failed to decode file, possibly corrupt: {}", err);

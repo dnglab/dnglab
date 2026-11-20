@@ -67,6 +67,7 @@
 use decoders::Camera;
 use decoders::Decoder;
 use decoders::RawDecodeParams;
+use decoders::UnsupportedReason;
 use formats::jfif::JfifError;
 use lazy_static::lazy_static;
 
@@ -202,7 +203,14 @@ pub type ErrorSource = Box<dyn std::error::Error + Send + Sync + 'static>;
 pub enum RawlerError {
   /// The camera, or a mode of it, is not supported
   #[error("Error: {}, model '{}', make: '{}', mode: '{}'", what, model, make, mode)]
-  Unsupported { what: String, model: String, make: String, mode: String },
+  Unsupported {
+    what: String,
+    model: String,
+    make: String,
+    mode: String,
+    /// Reason for a camera that is known but marked as unsupported
+    reason: Option<UnsupportedReason>,
+  },
 
   /// The raw data can't be decoded, e.g. because it is corrupt
   #[error("{}", with_context(message, context))]
@@ -251,6 +259,18 @@ impl RawlerError {
       model: camera.model.clone(),
       make: camera.make.clone(),
       mode: camera.mode.clone(),
+      reason: camera.unsupported,
+    }
+  }
+
+  /// [`Self::Unsupported`] for a known camera that is marked as unsupported
+  pub fn unsupported_camera(camera: &Camera, reason: UnsupportedReason) -> Self {
+    Self::Unsupported {
+      what: format!("Camera is known, but not supported ({})", reason),
+      model: camera.model.clone(),
+      make: camera.make.clone(),
+      mode: camera.mode.clone(),
+      reason: Some(reason),
     }
   }
 
@@ -468,6 +488,7 @@ mod tests {
       model: "Model".into(),
       make: "Make".into(),
       mode: "".into(),
+      reason: None,
     }
     .context("ignored");
     assert!(matches!(&unsupported, RawlerError::Unsupported { .. }));

@@ -5,12 +5,43 @@ use std::collections::BTreeMap;
 
 use clap::ArgMatches;
 use itertools::Itertools;
+use rawler::decoders::UnsupportedReason;
 use rawler::global_loader;
 
 #[derive(Default, Clone)]
 struct CameraRemarks {
   modes: Vec<String>,
   remarks: Vec<String>,
+  /// Number of modes, including the base camera
+  entries: usize,
+  /// Modes marked as unsupported, with the reason
+  unsupported: Vec<(String, UnsupportedReason)>,
+}
+
+impl CameraRemarks {
+  /// All modes of the camera are marked as unsupported
+  fn is_unsupported(&self) -> bool {
+    self.unsupported.len() == self.entries
+  }
+
+  /// Reasons of a camera marked as unsupported, or `None` if some mode is supported
+  fn unsupported_reasons(&self) -> Option<String> {
+    self
+      .is_unsupported()
+      .then(|| self.unsupported.iter().map(|(_, reason)| reason.to_string()).sorted().dedup().join(", "))
+  }
+
+  /// Remarks, followed by the unsupported modes of a partially supported camera
+  fn remarks(&self) -> String {
+    let mut remarks = self.remarks.clone();
+    if !self.is_unsupported() {
+      for (mode, reason) in self.unsupported.iter().sorted_by(|a, b| a.0.cmp(&b.0)) {
+        let mode = if mode.is_empty() { "base mode" } else { mode };
+        remarks.push(format!("{} unsupported ({})", mode, reason));
+      }
+    }
+    remarks.join(", ")
+  }
 }
 
 /// Print list of supported cameras
@@ -26,9 +57,14 @@ pub async fn cameras(options: &ArgMatches) -> crate::Result<()> {
       model.modes.push(key.2.clone());
     }
 
+    model.entries += 1;
+
     if let Some(cam) = cameras.get(key) {
       if let Some(remark) = &cam.remark {
         model.remarks.push(remark.clone());
+      }
+      if let Some(reason) = cam.unsupported {
+        model.unsupported.push((key.2.clone(), reason));
       }
     }
   }
@@ -49,9 +85,16 @@ pub async fn cameras(options: &ArgMatches) -> crate::Result<()> {
         } else {
           model.1.modes.iter().sorted().join(", ")
         };
-        let remarks = model.1.remarks.iter().join(", ");
+        let remarks = model.1.remarks();
+        let state = if let Some(reasons) = model.1.unsupported_reasons() {
+          format!("❌ No ({})", reasons)
+        } else if model.1.unsupported.is_empty() {
+          "✅ Yes".to_string()
+        } else {
+          "⚠️ Partial".to_string()
+        };
 
-        println!("|{:max_make$}  | {:max_model$} | ✅ Yes | {} | {} |", make.0, model.0, modes, remarks);
+        println!("|{:max_make$}  | {:max_model$} | {} | {} | {} |", make.0, model.0, state, modes, remarks);
       }
     }
     println!();
@@ -65,7 +108,13 @@ pub async fn cameras(options: &ArgMatches) -> crate::Result<()> {
         } else {
           model.1.modes.iter().sorted().join(", ")
         };
-        let remarks = model.1.remarks.iter().join(", ");
+        let remarks = match model.1.unsupported_reasons() {
+          Some(reasons) => [format!("unsupported: {}", reasons), model.1.remarks()]
+            .into_iter()
+            .filter(|remark| !remark.is_empty())
+            .join(", "),
+          None => model.1.remarks(),
+        };
         if remarks.is_empty() {
           println!("{:max_make$}  {:max_model$}  {}", make.0, model.0, modes);
         } else {
