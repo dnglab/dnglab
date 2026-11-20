@@ -798,12 +798,7 @@ impl QTable {
   /// Build a quantization table based on 5 quantization points.
   fn build_table(header: &Header, qp: &[i32; 5]) -> Vec<i32> {
     let mut qtable = vec![0; 2 * (1 << (header.raw_bits as usize))];
-    let mut cur_val = -(qp[4] as i32);
-
-    for qt in qtable.iter_mut() {
-      if cur_val > qp[4] as i32 {
-        break;
-      }
+    for (qt, cur_val) in qtable.iter_mut().zip(-qp[4]..=qp[4]) {
       *qt = match cur_val {
         x if x <= -qp[3] => -4,
         x if x <= -qp[2] => -3,
@@ -815,7 +810,6 @@ impl QTable {
         x if x < qp[3] => 3,
         _ => 4,
       };
-      cur_val += 1;
     }
     qtable
   }

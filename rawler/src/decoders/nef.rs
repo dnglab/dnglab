@@ -613,12 +613,10 @@ impl<'a> NefDecoder<'a> {
 
           let ci = WB_SERIALMAP[serialno & 0xff] as u32;
           let mut cj = WB_KEYMAP[keyno & 0xff] as u32;
-          let mut ck = 0x60_u32;
           let mut buf = [0_u8; 280];
-          for i in 0..280 {
+          for ((out, &byte), ck) in buf.iter_mut().zip(&src[..280]).zip(0x60_u32..) {
             cj += ci * ck;
-            ck += 1;
-            buf[i] = src[i] ^ (cj as u8);
+            *out = byte ^ (cj as u8);
           }
 
           // 0x205 stores WB at offset 14 in the decrypted block; 0x204 and 0x206 at offset 6
