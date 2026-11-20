@@ -173,12 +173,12 @@ impl Tile {
         3 => {
           let mut q_step = QStep::new(qp_width, qp_height8);
           for qp_row in 0..qp_height8 {
-            let mut row0_idx = qp_width * std::cmp::min(4 * qp_row + 0, qp_height - 1);
-            let mut row1_idx = qp_width * std::cmp::min(4 * qp_row + 1, qp_height - 1);
-            let mut row2_idx = qp_width * std::cmp::min(4 * qp_row + 2, qp_height - 1);
-            let mut row3_idx = qp_width * std::cmp::min(4 * qp_row + 3, qp_height - 1);
-            for _qp_col in 0..qp_width {
-              let qp_sum = qp_table[row0_idx] + qp_table[row1_idx] + qp_table[row2_idx] + qp_table[row3_idx];
+            let row0_idx = qp_width * std::cmp::min(4 * qp_row + 0, qp_height - 1);
+            let row1_idx = qp_width * std::cmp::min(4 * qp_row + 1, qp_height - 1);
+            let row2_idx = qp_width * std::cmp::min(4 * qp_row + 2, qp_height - 1);
+            let row3_idx = qp_width * std::cmp::min(4 * qp_row + 3, qp_height - 1);
+            for qp_col in 0..qp_width {
+              let qp_sum = qp_table[row0_idx + qp_col] + qp_table[row1_idx + qp_col] + qp_table[row2_idx + qp_col] + qp_table[row3_idx + qp_col];
               let quant_val = if qp_sum.is_negative() {
                 (qp_sum + 3) / 4 // Round?
               } else {
@@ -188,10 +188,6 @@ impl Tile {
               let x = q_lookup(quant_val);
               //eprintln!("QSTEP 8: {:?}", x);
               q_step.q_step_tbl.push(x);
-              row0_idx += 1;
-              row1_idx += 1;
-              row2_idx += 1;
-              row3_idx += 1;
             }
           }
           debug_assert_eq!(q_step.q_step_tbl.len(), qp_width * qp_height8);
@@ -201,15 +197,13 @@ impl Tile {
         2 => {
           let mut q_step = QStep::new(qp_width, qp_height4);
           for qp_row in 0..qp_height4 {
-            let mut row0_idx = qp_width * std::cmp::min(2 * qp_row + 0, qp_height - 1);
-            let mut row1_idx = qp_width * std::cmp::min(2 * qp_row + 1, qp_height - 1);
-            for _qp_col in 0..qp_width {
-              let quant_val = (qp_table[row0_idx] + qp_table[row1_idx]) / 2;
+            let row0_idx = qp_width * std::cmp::min(2 * qp_row + 0, qp_height - 1);
+            let row1_idx = qp_width * std::cmp::min(2 * qp_row + 1, qp_height - 1);
+            for qp_col in 0..qp_width {
+              let quant_val = (qp_table[row0_idx + qp_col] + qp_table[row1_idx + qp_col]) / 2;
               let x = q_lookup(quant_val);
               //eprintln!("QSTEP 4: {:?}", x);
               q_step.q_step_tbl.push(x);
-              row0_idx += 1;
-              row1_idx += 1;
             }
           }
           debug_assert_eq!(q_step.q_step_tbl.len(), qp_width * qp_height4);
