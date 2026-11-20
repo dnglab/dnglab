@@ -6,11 +6,13 @@ fn bench_convert_raw(group: &mut BenchmarkGroup<'_, WallTime>, name: &str, make:
   let mut inner = || -> anyhow::Result<()> {
     let sample = rawler::rawdb::sample(make, model, sample)?;
     let mut dng = Cursor::new(Vec::with_capacity(100 * 1024 * 1024));
-    let mut params = ConvertParams::default();
-    params.embedded = false;
+    let params = ConvertParams {
+      embedded: false,
+      ..Default::default()
+    };
     group.bench_with_input(name, &sample, |b, sample| {
       b.iter(|| {
-        convert_raw_file(black_box(&sample), &mut dng, black_box(&params)).expect("Convert failed");
+        convert_raw_file(black_box(sample), &mut dng, black_box(&params)).expect("Convert failed");
       })
     });
     Ok(())

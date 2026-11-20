@@ -200,7 +200,7 @@ mod tests {
   fn curve_through_points() {
     let points = [0.0, 0.0, 0.25, 0.15, 0.5, 0.55, 0.75, 0.85, 1.0, 1.0];
     let curve = ToneCurve::new(&points).expect("curve");
-    for point in points.chunks_exact(2) {
+    for point in points.as_chunks::<2>().0 {
       assert!((curve.eval(point[0]) - point[1]).abs() < 1e-5, "{:?}", point);
     }
     // Monotonic between the points
@@ -265,7 +265,7 @@ mod tests {
   #[test]
   fn default_render_curve() {
     let curve = ToneCurve::default_render();
-    for point in DEFAULT_RENDER_POINTS.chunks_exact(2) {
+    for point in DEFAULT_RENDER_POINTS.as_chunks::<2>().0 {
       assert!((curve.eval(point[0]) - point[1]).abs() < 1e-5, "{:?}", point);
     }
     // Strictly increasing and limited to the output range, with no overshoot
