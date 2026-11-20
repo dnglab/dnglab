@@ -83,6 +83,13 @@ fn idwt_53_line(tile: &Tile, out: &mut [i32], low: &[i32], high: &[i32]) {
   }
 }
 
+/// Copy the next line of the level below `level` into the LL band buffer
+/// of `level`, reusing the allocation of the buffer
+fn copy_lower_line(iwt_transforms: &mut [WaveletTransform], level: usize) {
+  let (lower, upper) = iwt_transforms.split_at_mut(level);
+  upper[0].band0_buf.clone_from(lower[level - 1].getline());
+}
+
 /// This structure holds the inverse transformation state
 /// Each level has it's own state, so for 3 levels of DWT
 /// 3 instances are required.
@@ -238,7 +245,7 @@ impl CodecParams {
       let q_step_level = tile.q_step.as_ref().map(|f| &f[cur_level]);
 
       if cur_level > 0 {
-        iwt_transforms[cur_level].band0_buf = iwt_transforms[cur_level - 1].getline().clone();
+        copy_lower_line(iwt_transforms, cur_level);
       } else {
         iwt_transforms[cur_level].band0_buf = self.decode_line_with_iquantization(&plane.subbands[cur_band], &mut params[cur_band], q_step_level)?;
       }
@@ -312,7 +319,7 @@ impl CodecParams {
             if iwt_transforms[level - 1].cur_h == 0 {
               self.idwt_53_filter_transform(tile, plane, params, iwt_transforms, level - 1)?;
             }
-            iwt_transforms[level].band0_buf = iwt_transforms[level - 1].getline().clone();
+            copy_lower_line(iwt_transforms, level);
           }
           let wvlt = &mut iwt_transforms[level];
           let h0 = wvlt.flt_tap_h + 3;
@@ -364,7 +371,7 @@ impl CodecParams {
         if iwt_transforms[level - 1].cur_h == 0 {
           self.idwt_53_filter_transform(tile, plane, params, iwt_transforms, level - 1)?;
         }
-        iwt_transforms[level].band0_buf = iwt_transforms[level - 1].getline().clone();
+        copy_lower_line(iwt_transforms, level);
       }
       let wvlt = &mut iwt_transforms[level];
 
