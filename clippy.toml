@@ -1,0 +1,2 @@
+# The unwrap_used lint of the workspace applies to non-test code only
+allow-unwrap-in-tests = true

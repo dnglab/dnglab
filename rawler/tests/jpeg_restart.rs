@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use rawler::decompressors::ljpeg::LjpegDecompressor;
 use rawler::pumps::{BitPump, BitPumpJPEG};
 
