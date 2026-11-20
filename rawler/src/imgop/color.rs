@@ -286,7 +286,7 @@ pub enum PixelOp {
   /// Linear transformation of the RGB values
   Matrix([[f32; 3]; 3]),
   /// Rendering tables of a camera profile, see [`ProfileRender::apply_pixel`]
-  Profile(ProfileRender),
+  Profile(Box<ProfileRender>),
   /// Compress the values above white, see [`HighlightShoulder::apply_rgb`]
   Highlights(HighlightShoulder),
   /// Clip each value to 0.0..=1.0
