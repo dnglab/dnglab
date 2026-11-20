@@ -278,8 +278,9 @@ impl CFA {
 
     if width > 0 {
       // copy the pattern into the top left
-      for (i, c) in patname.chars().enumerate() {
-        pattern[i / width][i % width] = CFAColor::try_from(c).ok()? as u8;
+      let cells = (0..height).flat_map(|row| (0..width).map(move |col| (row, col)));
+      for ((row, col), c) in cells.zip(patname.chars()) {
+        pattern[row][col] = CFAColor::try_from(c).ok()? as u8;
       }
 
       // extend the pattern into the full matrix
