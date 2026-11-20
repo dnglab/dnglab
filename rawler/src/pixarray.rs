@@ -94,6 +94,10 @@ where
     self.data.len()
   }
 
+  pub fn is_empty(&self) -> bool {
+    self.data.is_empty()
+  }
+
   pub fn dim(&self) -> Dim2 {
     Dim2::new(self.width, self.height)
   }
