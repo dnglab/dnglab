@@ -252,7 +252,10 @@ fn with_context(message: &str, context: &Option<ErrorSource>) -> String {
 
 pub type Result<T> = std::result::Result<T, RawlerError>;
 
+// The constructors are cold, so the compiler keeps the error branches of
+// the callers out of their hot loops.
 impl RawlerError {
+  #[cold]
   pub fn unsupported(camera: &Camera, what: impl AsRef<str>) -> Self {
     Self::Unsupported {
       what: what.as_ref().to_string(),
@@ -264,6 +267,7 @@ impl RawlerError {
   }
 
   /// [`Self::Unsupported`] for a known camera that is marked as unsupported
+  #[cold]
   pub fn unsupported_camera(camera: &Camera, reason: UnsupportedReason) -> Self {
     Self::Unsupported {
       what: format!("Camera is known, but not supported ({})", reason),
@@ -275,6 +279,7 @@ impl RawlerError {
   }
 
   /// [`Self::DecoderFailed`] with `message`, without a context
+  #[cold]
   pub fn decoder_failed(message: impl Into<String>) -> Self {
     Self::DecoderFailed {
       message: message.into(),
@@ -283,6 +288,7 @@ impl RawlerError {
   }
 
   /// [`Self::InvalidInput`] with `message`, without a context
+  #[cold]
   pub fn invalid_input(message: impl Into<String>) -> Self {
     Self::InvalidInput {
       message: message.into(),
@@ -291,6 +297,7 @@ impl RawlerError {
   }
 
   /// [`Self::General`] with `message`, without a context
+  #[cold]
   pub fn general(message: impl Into<String>) -> Self {
     Self::General {
       message: message.into(),
@@ -299,11 +306,13 @@ impl RawlerError {
   }
 
   /// [`Self::FeatureDisabled`]: `feature` is needed for `what`
+  #[cold]
   pub fn feature_disabled(feature: &'static str, what: impl Into<String>) -> Self {
     Self::FeatureDisabled { feature, what: what.into() }
   }
 
   /// [`Self::DecoderFailed`] for an I/O `error` in `context` on the file `path`
+  #[cold]
   pub fn with_io_error(context: impl AsRef<str>, path: impl AsRef<Path>, error: std::io::Error) -> Self {
     Self::decoder_failed(format!("I/O error in context '{}' on file {}", context.as_ref(), path.as_ref().display())).context(error)
   }
@@ -313,6 +322,7 @@ impl RawlerError {
   /// Sets the context of [`Self::DecoderFailed`], [`Self::InvalidInput`] and
   /// [`Self::General`]. The other variants describe the error itself, not a
   /// consequence of another one, they are returned unchanged.
+  #[cold]
   pub fn context(self, context: impl Into<ErrorSource>) -> Self {
     match self {
       Self::DecoderFailed { message, .. } => Self::DecoderFailed {
@@ -333,12 +343,14 @@ impl RawlerError {
 }
 
 impl From<std::io::Error> for RawlerError {
+  #[cold]
   fn from(err: std::io::Error) -> Self {
     Self::decoder_failed("I/O error").context(err)
   }
 }
 
 impl From<TiffError> for RawlerError {
+  #[cold]
   fn from(err: TiffError) -> Self {
     match err {
       // Only the writer produces this, where it means the caller asked for
@@ -350,6 +362,7 @@ impl From<TiffError> for RawlerError {
 }
 
 impl From<JfifError> for RawlerError {
+  #[cold]
   fn from(err: JfifError) -> Self {
     Self::decoder_failed("Failed to read JFIF data").context(err)
   }
