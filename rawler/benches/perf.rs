@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 use criterion::{Criterion, criterion_group, criterion_main};
 use rawler::ljpeg92::LjpegCompressor;
 use std::hint::black_box;
