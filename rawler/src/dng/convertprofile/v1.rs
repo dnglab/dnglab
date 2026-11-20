@@ -8,8 +8,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::dng::{
-  ApplyDngOpcodes, CropMode, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DEFAULT_LOSSY_JPEG_QUALITY, DNG_WRITER_VERSION, DngCompression, DngVersion,
-  StaggeredOutput, opcodes::OpcodeSelector,
+  ApplyDngOpcodes, CropMode, DEFAULT_JXL_DECODE_SPEED, DEFAULT_JXL_DISTANCE, DEFAULT_JXL_EFFORT, DEFAULT_LOSSY_JPEG_QUALITY, DNG_WRITER_VERSION,
+  DngCompression, DngVersion, StaggeredOutput, opcodes::OpcodeSelector,
 };
 
 /// How to handle files that contain multiple raw images
