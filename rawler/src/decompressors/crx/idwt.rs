@@ -9,6 +9,7 @@ use super::{
   BandParam, CodecParams, Result,
   mdat::{Plane, Tile},
 };
+use multiversion::multiversion;
 
 /// Even sample of the inverse 5/3 lifting: the low-pass value minus the
 /// rounded mean of the two neighboring high-pass values,
@@ -42,6 +43,7 @@ fn odd_sample_edge(high: i32, e: i32) -> i32 {
 /// Horizontal inverse 5/3 transform of one line from the coefficients of
 /// the low-pass band `low` and the high-pass band `high` into `out`. At a
 /// border without a neighboring tile, the missing neighbor is mirrored.
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
 fn idwt_53_line(tile: &Tile, out: &mut [i32], low: &[i32], high: &[i32]) {
   let width = out.len();
   if width <= 1 {
