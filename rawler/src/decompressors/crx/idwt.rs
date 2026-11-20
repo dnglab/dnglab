@@ -39,6 +39,50 @@ fn odd_sample_edge(high: i32, e: i32) -> i32 {
   high + e
 }
 
+/// Horizontal inverse 5/3 transform of one line from the coefficients of
+/// the low-pass band `low` and the high-pass band `high` into `out`. At a
+/// border without a neighboring tile, the missing neighbor is mirrored.
+fn idwt_53_line(tile: &Tile, out: &mut [i32], low: &[i32], high: &[i32]) {
+  let width = out.len();
+  if width <= 1 {
+    out[0] = low[0];
+    return;
+  }
+  // With a tile on the left, its last high-pass value comes first
+  let (first, high) = if tile.tiles_left {
+    (even_sample(low[0], high[0], high[1]), &high[1..])
+  } else {
+    (even_sample_edge(low[0], high[0]), high)
+  };
+  out[0] = first;
+  // Pairs of an odd and an even sample before the right edge
+  let pairs = (width - 2) / 2;
+  let (body, tail) = out[1..].split_at_mut(2 * pairs);
+  let (lows, low_tail) = low[1..].split_at(pairs);
+  let mut prev = first;
+  let highs = high[..pairs].iter().zip(&high[1..=pairs]);
+  for ((pair, &l), (&h0, &h1)) in body.as_chunks_mut::<2>().0.iter_mut().zip(lows).zip(highs) {
+    let even = even_sample(l, h0, h1);
+    *pair = [odd_sample(h0, prev, even), even];
+    prev = even;
+  }
+  // The low-pass band has a value left only for a tile on the right or an odd width
+  let h = high[pairs];
+  if tile.tiles_right {
+    let even = even_sample(low_tail[0], h, high[pairs + 1]);
+    tail[0] = odd_sample(h, prev, even);
+    if width & 1 == 1 {
+      tail[1] = even;
+    }
+  } else if width & 1 == 1 {
+    let even = even_sample_edge(low_tail[0], h);
+    tail[0] = odd_sample(h, prev, even);
+    tail[1] = even;
+  } else {
+    tail[0] = odd_sample_edge(h, prev);
+  }
+}
+
 /// This structure holds the inverse transformation state
 /// Each level has it's own state, so for 3 levels of DWT
 /// 3 instances are required.
@@ -53,10 +97,6 @@ pub(crate) struct WaveletTransform {
   band2_buf: Vec<i32>,
   /// Contains the decoded data for HH band of current level
   band3_buf: Vec<i32>,
-  band0_pos: usize,
-  band1_pos: usize,
-  band2_pos: usize,
-  band3_pos: usize,
 
   /// Line buffers of the vertical inverse transform: `[0]` is the
   /// low-pass line, `[1]` and `[2]` are the previous and the current
@@ -100,10 +140,6 @@ impl WaveletTransform {
       band1_buf: Vec::new(),
       band2_buf: Vec::new(),
       band3_buf: Vec::new(),
-      band0_pos: 0,
-      band1_pos: 0,
-      band2_pos: 0,
-      band3_pos: 0,
       line_buf,
       cur_line: 0,
       cur_h: 0,
@@ -118,36 +154,6 @@ impl WaveletTransform {
     debug_assert!(self.cur_h > 0);
     self.cur_h -= 1;
     result
-  }
-
-  pub(super) fn band0(&mut self, offset: usize) -> i32 {
-    self.band0_buf[self.band0_pos + offset]
-  }
-
-  pub(super) fn band1(&mut self, offset: usize) -> i32 {
-    self.band1_buf[self.band1_pos + offset]
-  }
-
-  pub(super) fn band2(&mut self, offset: usize) -> i32 {
-    self.band2_buf[self.band2_pos + offset]
-  }
-
-  pub(super) fn band3(&mut self, offset: usize) -> i32 {
-    self.band3_buf[self.band3_pos + offset]
-  }
-
-  pub(super) fn advance_bufs(&mut self, count: usize) {
-    self.band0_pos += count;
-    self.band1_pos += count;
-    self.band2_pos += count;
-    self.band3_pos += count;
-  }
-
-  pub(super) fn reset_bufs(&mut self) {
-    self.band0_pos = 0;
-    self.band1_pos = 0;
-    self.band2_pos = 0;
-    self.band3_pos = 0;
   }
 }
 
@@ -196,71 +202,8 @@ impl CodecParams {
   }
 
   pub(super) fn idwt_53_horizontal(&self, tile: &Tile, la: usize, lb: usize, wvlt: &mut WaveletTransform) {
-    //let mut b0pos = 0;
-    //let mut b1pos = 0;
-    //let mut b2pos = 0;
-    //let mut b3pos = 0;
-    let mut lapos = 0;
-    let mut lbpos = 0;
-    wvlt.reset_bufs();
-
-    if wvlt.width <= 1 {
-      wvlt.line_buf[la][0] = wvlt.band0(0);
-      wvlt.line_buf[lb][0] = wvlt.band2(0);
-    } else {
-      if tile.tiles_left {
-        // Untested
-        wvlt.line_buf[la][0] = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-        wvlt.line_buf[lb][0] = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
-        wvlt.band1_pos += 1;
-        wvlt.band3_pos += 1;
-      } else {
-        wvlt.line_buf[la][0] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
-        wvlt.line_buf[lb][0] = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
-      }
-      wvlt.band0_pos += 1;
-      wvlt.band2_pos += 1;
-
-      //println!("config: tile: {}, {}, band1 width: {}", tile.id, wvlt.width - 3, wvlt.band1_buf.len());
-      for _i in (0..(wvlt.width - 3)).step_by(2) {
-        //println!("val: {}, band1_pos: {}, band1_size: {}", _i, wvlt.band1_pos, wvlt.band1_buf.len());
-
-        let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-        wvlt.line_buf[la][lapos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[la][lapos], delta);
-        wvlt.line_buf[la][lapos + 2] = delta;
-
-        let delta = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
-        wvlt.line_buf[lb][lbpos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[lb][lbpos], delta);
-        wvlt.line_buf[lb][lbpos + 2] = delta;
-
-        wvlt.advance_bufs(1);
-
-        lapos += 2;
-        lbpos += 2;
-      }
-      if tile.tiles_right {
-        // Untested
-        let delta_a = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-        wvlt.line_buf[la][lapos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[la][lapos + 0], delta_a);
-
-        let delta_b = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
-        wvlt.line_buf[lb][lbpos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[lb][lbpos + 0], delta_b);
-
-        if wvlt.width & 1 == 1 {
-          wvlt.line_buf[la][lapos + 2] = delta_a;
-          wvlt.line_buf[lb][lbpos + 2] = delta_b;
-        }
-      } else if wvlt.width & 1 == 1 {
-        wvlt.line_buf[la][lapos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[la][lapos], even_sample_edge(wvlt.band0(0), wvlt.band1(0)));
-        wvlt.line_buf[la][lapos + 2] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
-
-        wvlt.line_buf[lb][lbpos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[lb][lbpos], even_sample_edge(wvlt.band2(0), wvlt.band3(0)));
-        wvlt.line_buf[lb][lbpos + 2] = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
-      } else {
-        wvlt.line_buf[la][lapos + 1] = odd_sample_edge(wvlt.band1(0), wvlt.line_buf[la][lapos + 0]);
-        wvlt.line_buf[lb][lbpos + 1] = odd_sample_edge(wvlt.band3(0), wvlt.line_buf[lb][lbpos + 0]);
-      }
-    }
+    idwt_53_line(tile, &mut wvlt.line_buf[la], &wvlt.band0_buf, &wvlt.band1_buf);
+    idwt_53_line(tile, &mut wvlt.line_buf[lb], &wvlt.band2_buf, &wvlt.band3_buf);
   }
 
   pub(super) fn idwt_53_filter_init(
@@ -298,7 +241,6 @@ impl CodecParams {
         let l0 = 0;
         let l1 = 1;
         let l2 = 2;
-        let mut l2_pos = 0;
 
         if tile.tiles_top {
           self.idwt_53_horizontal(tile, l0, 1, wvlt);
@@ -306,40 +248,7 @@ impl CodecParams {
           wvlt.band2_buf = self.decode_line_with_iquantization(&plane.subbands[cur_band + 2], &mut params[cur_band + 2], q_step_level)?;
 
           // process L band
-          if wvlt.width <= 1 {
-            wvlt.line_buf[l2][0] = wvlt.band2(0);
-          } else {
-            if tile.tiles_left {
-              wvlt.line_buf[l2][0] = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
-              wvlt.band3_pos += 1;
-            } else {
-              wvlt.line_buf[l2][0] = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
-            }
-            wvlt.band2_pos += 1;
-
-            for _i in (0..wvlt.width - 3).step_by(2) {
-              let delta = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
-              wvlt.line_buf[l2][1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l2][l2_pos], delta);
-              wvlt.line_buf[l2][2] = delta;
-              wvlt.band2_pos += 1;
-              wvlt.band3_pos += 1;
-              l2_pos += 2;
-            }
-
-            if tile.tiles_right {
-              let delta = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
-              wvlt.line_buf[l2][l2_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l2][l2_pos + 0], delta);
-              if wvlt.width & 1 == 1 {
-                wvlt.line_buf[l2][l2_pos + 1] = delta;
-              }
-            } else if wvlt.width & 1 == 1 {
-              let delta = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
-              wvlt.line_buf[l2][l2_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l2][l2_pos + 0], delta);
-              wvlt.line_buf[l2][l2_pos + 2] = delta;
-            } else {
-              wvlt.line_buf[l2][l2_pos + 1] = odd_sample_edge(wvlt.band3(0), wvlt.line_buf[l2][l2_pos + 0]);
-            }
-          }
+          idwt_53_line(tile, &mut wvlt.line_buf[l2], &wvlt.band2_buf, &wvlt.band3_buf);
 
           // process H band
           for i in 0..wvlt.width {
@@ -357,42 +266,9 @@ impl CodecParams {
         // This is unused in real world
 
         wvlt.band1_buf = self.decode_line_with_iquantization(&plane.subbands[cur_band + 1], &mut params[cur_band + 1], q_step_level)?;
-        let mut h0_pos = 0;
 
         // process H band
-        if wvlt.width <= 1 {
-          wvlt.line_buf[h0][0] = wvlt.band0(0);
-        } else {
-          if tile.tiles_left {
-            wvlt.line_buf[h0][h0_pos] = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-            wvlt.band1_pos += 1;
-          } else {
-            wvlt.line_buf[h0][h0_pos] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
-          }
-          wvlt.band0_pos += 1;
-
-          for _i in (0..(wvlt.width - 3)).step_by(2) {
-            let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-            wvlt.line_buf[h0][h0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[h0][h0_pos + 0], delta);
-            wvlt.line_buf[h0][h0_pos + 2] = delta;
-            wvlt.band0_pos += 1;
-            wvlt.band1_pos += 1;
-            h0_pos += 2;
-          }
-
-          if tile.tiles_right {
-            // untested
-            let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-            wvlt.line_buf[h0][h0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[h0][h0_pos + 0], delta);
-            wvlt.line_buf[h0][h0_pos + 2] = delta;
-          } else if wvlt.width & 1 == 1 {
-            let delta = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
-            wvlt.line_buf[h0][h0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[h0][h0_pos + 0], delta);
-            wvlt.line_buf[h0][h0_pos + 2] = delta;
-          } else {
-            wvlt.line_buf[h0][h0_pos + 1] = odd_sample_edge(wvlt.band1(0), wvlt.line_buf[h0][h0_pos + 0]);
-          }
-        }
+        idwt_53_line(tile, &mut wvlt.line_buf[h0], &wvlt.band0_buf, &wvlt.band1_buf);
         wvlt.cur_line += 1;
         wvlt.cur_h += 1;
         wvlt.flt_tap_h = (wvlt.flt_tap_h + 1) % 5;
@@ -424,54 +300,16 @@ impl CodecParams {
             iwt_transforms[level].band0_buf = iwt_transforms[level - 1].getline().clone();
           }
           let wvlt = &mut iwt_transforms[level];
-          wvlt.reset_bufs();
           let h0 = wvlt.flt_tap_h + 3;
           let h1 = (wvlt.flt_tap_h + 1) % 5 + 3;
           let h2 = (wvlt.flt_tap_h + 2) % 5 + 3;
           let l0 = 0;
           let l1 = 1;
-          let mut l0_pos = 0;
-          //let mut l1_pos = 0;
 
           // process L bands
-          if wvlt.width <= 1 {
-            wvlt.line_buf[l0][0] = wvlt.band0(0);
-          } else {
-            if tile.tiles_left {
-              // untested
-              wvlt.line_buf[l0][l0_pos] = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-              wvlt.band1_pos += 1;
-            } else {
-              wvlt.line_buf[l0][l0_pos] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
-            }
-            wvlt.band0_pos += 1;
-            for _i in (0..(wvlt.width - 3)).step_by(2) {
-              let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-              wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
-              wvlt.line_buf[l0][l0_pos + 2] = delta;
-              wvlt.band0_pos += 1;
-              wvlt.band1_pos += 1;
-              l0_pos += 2;
-            }
-            if tile.tiles_right {
-              // untested
-              let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-              wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
-              if wvlt.width & 1 == 1 {
-                wvlt.line_buf[l0][l0_pos + 2] = delta;
-              }
-            } else if wvlt.width & 1 == 1 {
-              let delta = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
-              wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
-              wvlt.line_buf[l0][l0_pos + 2] = delta;
-            } else {
-              wvlt.line_buf[l0][l0_pos + 1] = odd_sample_edge(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0]);
-            }
-          }
+          idwt_53_line(tile, &mut wvlt.line_buf[l0], &wvlt.band0_buf, &wvlt.band1_buf);
 
           // process H bands
-          //wvlt.reset_bufs();
-
           wvlt.line_buf.swap(1, 2);
 
           for i in 0..wvlt.width {
@@ -513,71 +351,15 @@ impl CodecParams {
       }
       let wvlt = &mut iwt_transforms[level];
 
-      wvlt.reset_bufs();
-
       let l0 = 0;
       let l1 = 1;
-      //let l2 = 2;
-      let mut l0_pos = 0;
-      let mut l1_pos = 0;
-      //let mut l2_pos = 0;
       let h0 = wvlt.flt_tap_h + 3;
       let h1 = (wvlt.flt_tap_h + 1) % 5 + 3;
       let h2 = (wvlt.flt_tap_h + 2) % 5 + 3;
 
       // process L bands
-      if wvlt.width <= 1 {
-        wvlt.line_buf[l0][0] = wvlt.band0(0);
-        wvlt.line_buf[l1][0] = wvlt.band2(0);
-      } else {
-        // untested
-        if tile.tiles_left {
-          wvlt.line_buf[l0][0] = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-          wvlt.line_buf[l1][0] = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
-          wvlt.band1_pos += 1;
-          wvlt.band3_pos += 1;
-        } else {
-          wvlt.line_buf[l0][0] = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
-          wvlt.line_buf[l1][0] = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
-        }
-        wvlt.band0_pos += 1;
-        wvlt.band2_pos += 1;
-        for _i in (0..(wvlt.width - 3)).step_by(2) {
-          let delta = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-          wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
-          wvlt.line_buf[l0][l0_pos + 2] = delta;
-          let delta = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
-          wvlt.line_buf[l1][l1_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l1][l1_pos + 0], delta);
-          wvlt.line_buf[l1][l1_pos + 2] = delta;
-          wvlt.advance_bufs(1);
-          l0_pos += 2;
-          l1_pos += 2;
-        }
-        if tile.tiles_right {
-          // untested
-          let delta_a = even_sample(wvlt.band0(0), wvlt.band1(0), wvlt.band1(1));
-          wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta_a);
-
-          let delta_b = even_sample(wvlt.band2(0), wvlt.band3(0), wvlt.band3(1));
-          wvlt.line_buf[l1][l1_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l1][l1_pos + 0], delta_b);
-
-          if wvlt.width & 1 == 1 {
-            wvlt.line_buf[l0][l0_pos + 2] = delta_a;
-            wvlt.line_buf[l1][l1_pos + 2] = delta_b;
-          }
-        } else if wvlt.width & 1 == 1 {
-          let delta = even_sample_edge(wvlt.band0(0), wvlt.band1(0));
-          wvlt.line_buf[l0][l0_pos + 1] = odd_sample(wvlt.band1(0), wvlt.line_buf[l0][l0_pos + 0], delta);
-          wvlt.line_buf[l0][l0_pos + 2] = delta;
-
-          let delta = even_sample_edge(wvlt.band2(0), wvlt.band3(0));
-          wvlt.line_buf[l1][l1_pos + 1] = odd_sample(wvlt.band3(0), wvlt.line_buf[l1][l1_pos + 0], delta);
-          wvlt.line_buf[l1][l1_pos + 2] = delta;
-        } else {
-          wvlt.line_buf[l0][l0_pos + 1] = odd_sample_edge(wvlt.band1(0), wvlt.line_buf[l0][l0_pos]);
-          wvlt.line_buf[l1][l1_pos + 1] = odd_sample_edge(wvlt.band3(0), wvlt.line_buf[l1][l1_pos]);
-        }
-      }
+      idwt_53_line(tile, &mut wvlt.line_buf[l0], &wvlt.band0_buf, &wvlt.band1_buf);
+      idwt_53_line(tile, &mut wvlt.line_buf[l1], &wvlt.band2_buf, &wvlt.band3_buf);
 
       // process H bands
       let wvlt = &mut iwt_transforms[level];
