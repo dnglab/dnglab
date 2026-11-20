@@ -32,7 +32,7 @@ data:
         - ~
     rawMetadata:
       exif:
-        orientation: 1
+        orientation: 6
         copyright: ""
         artist: ~
         lens_spec: ~

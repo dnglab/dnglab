@@ -277,6 +277,7 @@ OpcodeList1, replacing an existing FixBadPixelsList:
     for the stage 3 grid.
   - Two cameras (`fuji_rotate_90cw`) store the image turned by 90°. The RAF
     decoder makes the turn part of the orientation, so the pixels aren't rotated.
+    The EXIF orientation of its metadata includes the turn, too.
   - Layouts 6 to 9 offset rows and columns, the plan fails for them.
 - **OpcodeList3** is applied after the demosaic by the `OpcodeList3` step, for
   example WarpRectilinear and GainMap.

@@ -410,8 +410,13 @@ impl<'a> Decoder for RafDecoder<'a> {
     // Fuji RAF has all EXIF tags we need and there is no LensID or something
     // we can lookup. So this is an exception, we just pass the information.
     // The lens tags are parsed by Exif::new() from the EXIF IFD.
-    let exif = Exif::new(&self.ifd)?;
-    let mdata = RawMetadata::new(self.camera.metadata(), exif);
+    let mut exif = Exif::new(&self.ifd)?;
+    let camera = self.camera.metadata();
+    if camera.find_hint("fuji_rotate_90cw") {
+      // Writers use the orientation of the raw image, which includes the turn
+      exif.orientation = self.orientation(camera).map(|orientation| orientation.to_u16());
+    }
+    let mdata = RawMetadata::new(camera, exif);
     Ok(mdata)
   }
 
@@ -465,6 +470,17 @@ impl<'a> Decoder for RafDecoder<'a> {
 }
 
 impl<'a> RafDecoder<'a> {
+  /// Orientation of the raw image. Cameras with `fuji_rotate_90cw` store the
+  /// image turned by 90°, the EXIF orientation applies after the turn.
+  fn orientation(&self, camera: &Camera) -> Option<Orientation> {
+    let orientation = Orientation::from_tiff(&self.ifd);
+    if camera.find_hint("fuji_rotate_90cw") {
+      Some(Orientation::Rotate90.then(orientation.unwrap_or(Orientation::Normal)))
+    } else {
+      orientation
+    }
+  }
+
   /// The IFD with the raw image data
   fn get_raw_ifd(&self) -> Result<&IFD> {
     self
@@ -627,13 +643,7 @@ impl<'a> RafDecoder<'a> {
       ..CFAConfig::new_from_camera(&camera)
     });
     let mut rawimage = RawImage::new(camera, image, 1, normalize_wb(self.get_wb()?), photometric, blacklevel, None, dummy);
-    // Some cameras store the image turned by 90°, the EXIF orientation applies after the turn
-    let orientation = Orientation::from_tiff(&self.ifd);
-    rawimage.orientation = if base_camera.find_hint("fuji_rotate_90cw") {
-      Some(Orientation::Rotate90.then(orientation.unwrap_or(Orientation::Normal)))
-    } else {
-      orientation
-    };
+    rawimage.orientation = self.orientation(base_camera);
     // The crop of the camera definition refers to the image of the earlier rotation
     rawimage.default_crop = base_camera
       .crop_area
