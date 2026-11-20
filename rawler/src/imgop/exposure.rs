@@ -381,7 +381,7 @@ mod tests {
         .collect();
       let output = applied(&input, 64, 1, 3, ev)?;
       assert_ne!(input, output);
-      for (before, after) in input.chunks_exact(3).zip(output.chunks_exact(3)) {
+      for (before, after) in input.as_chunks::<3>().0.iter().zip(output.as_chunks::<3>().0) {
         let factor = after[0] / before[0];
         assert!((after[1] / before[1] - factor).abs() < 1e-5, "{:?} {:?}", before, after);
         assert!((after[2] / before[2] - factor).abs() < 1e-5, "{:?} {:?}", before, after);

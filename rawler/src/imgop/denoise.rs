@@ -1161,10 +1161,8 @@ mod tests {
     assert_eq!(means.len(), 2 * 3);
     // A constant change of each color plane is undone exactly, also for the
     // pixels outside of the full blocks
-    let mut changed: Vec<f32> = original
-      .chunks_exact(3)
-      .flat_map(|pixel| [pixel[0] - 0.01, pixel[1] - 0.02, pixel[2] + 0.03])
-      .collect();
+    let (pixels, _) = original.as_chunks::<3>();
+    let mut changed: Vec<f32> = pixels.iter().flat_map(|pixel| [pixel[0] - 0.01, pixel[1] - 0.02, pixel[2] + 0.03]).collect();
     let restored = restore_block_means(&mut region(&mut changed, width, height, 3), &means);
     assert!(restored.iter().zip([0.01, 0.02, -0.03]).all(|(a, b)| (a - b).abs() < 1e-5), "{:?}", restored);
     assert!(original.iter().zip(&changed).all(|(a, b)| (a - b).abs() < 1e-5));

@@ -299,9 +299,11 @@ mod tests {
   #[test]
   fn exposure_and_clipping() {
     // A hue/saturation map works on the values before the exposure
-    let mut profile = CameraProfile::default();
-    profile.hue_sat_map_dims = Some([1, 2, 1]);
-    profile.hue_sat_map_data = [Some([0.0, 1.0, 1.0].repeat(2)), None, None];
+    let profile = CameraProfile {
+      hue_sat_map_dims: Some([1, 2, 1]),
+      hue_sat_map_data: [Some([0.0, 1.0, 1.0].repeat(2)), None, None],
+      ..Default::default()
+    };
     // BaselineExposure of +1 EV, the white point is 2.0
     let render = ProfileRender::new(Some((&profile, 0)), Some(&gain_table_map(vec![0.5, 0.5])), 1.0, None, HighlightMode::Clip, None).expect("render");
     assert_eq!(render.exposure_gain(), 2.0);

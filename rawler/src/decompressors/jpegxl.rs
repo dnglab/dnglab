@@ -241,6 +241,8 @@ impl<'a> Decompressor<'a, f32> for JpegXLDecompressor {
 }
 
 #[cfg(test)]
+// The tests pass lines as &mut [T], like the decoders
+#[allow(clippy::chunks_exact_to_as_chunks)]
 mod tests {
   use super::*;
 
@@ -365,7 +367,7 @@ mod tests {
     for (decoded, expected) in out.iter().zip(samples_float()) {
       assert!((decoded - expected).abs() < expected * 0.05, "decoded {} for {}", decoded, expected);
     }
-    let mut out = vec![0_f32; 8 * 4];
+    let mut out = [0_f32; 8 * 4];
     JpegXLDecompressor::new(16).decompress(JXL_FLOAT_LOSSY_GRAY, 0, out.chunks_exact_mut(8), 8)?;
     for (decoded, expected) in out.iter().zip(samples_float_gray()) {
       assert!((decoded - expected).abs() < expected * 0.05, "decoded {} for {}", decoded, expected);
@@ -387,7 +389,7 @@ mod tests {
 
   #[test]
   fn float_decoding_rejects_integer_codestream() {
-    let mut out = vec![0_f32; 8 * 4];
+    let mut out = [0_f32; 8 * 4];
     assert!(JpegXLDecompressor::new(16).decompress(JXL_12BIT, 0, out.chunks_exact_mut(8), 8).is_err());
   }
 }

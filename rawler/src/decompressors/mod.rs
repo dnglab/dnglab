@@ -332,6 +332,8 @@ where
 }
 
 #[cfg(test)]
+// The tests pass lines as &mut [T], like the decoders
+#[allow(clippy::chunks_exact_to_as_chunks)]
 mod tests {
   use super::*;
 

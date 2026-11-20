@@ -316,9 +316,10 @@ mod tests {
   fn strength_scales_the_change_of_stabilized_values() -> crate::Result<()> {
     let input = noisy_image(32, 32, 3, 0.05, |_, _, _| 0.25);
     let difference = |output: &[f32]| -> Vec<f32> {
-      input
-        .chunks_exact(3)
-        .zip(output.chunks_exact(3))
+      let (before, after) = (input.as_chunks::<3>().0, output.as_chunks::<3>().0);
+      before
+        .iter()
+        .zip(after)
         .map(|(a, b)| stabilized((b[0] + 2.0 * b[1] + b[2]) / 4.0) - stabilized((a[0] + 2.0 * a[1] + a[2]) / 4.0))
         .collect()
     };
@@ -370,7 +371,7 @@ mod tests {
     let input: Vec<f32> = (0..8 * 8).flat_map(|i| [if i % 8 < 4 { 1.0 } else { 0.1 }; 3]).collect();
     let output = sharpened(&input, 8, 8, 3, 2.0)?;
     assert_ne!(input, output);
-    assert!(output.chunks_exact(3 * 8).all(|row| row[..4 * 3].iter().all(|v| *v == 1.0)));
+    assert!(output.as_chunks::<{ 3 * 8 }>().0.iter().all(|row| row[..4 * 3].iter().all(|v| *v == 1.0)));
     Ok(())
   }
 
@@ -399,7 +400,7 @@ mod tests {
     let input = noisy_image(32, 32, 3, 0.05, |x, y, c| 0.2 + 0.1 * c as f32 + 0.005 * (x + y) as f32);
     let output = sharpened(&input, 32, 32, 3, 0.5)?;
     assert_ne!(input, output);
-    for (before, after) in input.chunks_exact(3).zip(output.chunks_exact(3)) {
+    for (before, after) in input.as_chunks::<3>().0.iter().zip(output.as_chunks::<3>().0) {
       let factor = after[0] / before[0];
       assert!((after[1] / before[1] - factor).abs() < 1e-4, "{:?} {:?}", before, after);
       assert!((after[2] / before[2] - factor).abs() < 1e-4, "{:?} {:?}", before, after);
@@ -433,7 +434,7 @@ mod tests {
     for wb in [[2.0, 1.0, 1.5, f32::NAN], [2.0, 1.0, 1.5, 0.0], [2.0, 1.0, 1.5, 7.0]] {
       let mut color: Vec<f32> = mono.iter().flat_map(|v| [v / wb[0], v / wb[1], v / wb[2]]).collect();
       laplacian_sharpen(region(&mut color, 32, 32, 3), 0.5, &wb)?;
-      for (value, pixel) in expected.iter().zip(color.chunks_exact(3)) {
+      for (value, pixel) in expected.iter().zip(color.as_chunks::<3>().0) {
         assert!((0..3).all(|c| close(pixel[c] * wb[c], *value)), "{} {:?}", value, pixel);
       }
     }
