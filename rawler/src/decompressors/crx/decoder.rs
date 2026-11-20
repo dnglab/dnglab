@@ -755,44 +755,53 @@ impl CodecParams {
   /// By using a median and max value, these are converted
   /// to unsigned 16 bit integers.
   fn convert_cfa_line(&self, lines: [&[i32]; 4], row_shift: usize, cfa_row: &mut [u16]) -> Result<()> {
-    let [l0, l1, l2, l3] = lines;
-    let pixels = izip!(cfa_row.as_chunks_mut::<2>().0, l0, l1, l2, l3);
+    cfa_line_from_planes(self, lines, row_shift, cfa_row)
+  }
+}
 
-    match self.enc_type {
-      0 => {
-        let median: i32 = 1 << (self.median_bits - 1);
-        let max_val: i32 = (1 << self.median_bits) - 1;
+/// [`CodecParams::convert_cfa_line`], built for more instruction sets
+///
+/// The conversion is vectorized. The one of `enc_type` 3 multiplies 32 bit
+/// values, which AVX2 does with 8 lanes and without emulation.
+#[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
+fn cfa_line_from_planes(codec: &CodecParams, lines: [&[i32]; 4], row_shift: usize, cfa_row: &mut [u16]) -> Result<()> {
+  let [l0, l1, l2, l3] = lines;
+  let pixels = izip!(cfa_row.as_chunks_mut::<2>().0, l0, l1, l2, l3);
 
-        for (cfa, v0, v1, v2, v3) in pixels {
-          let (left, right) = if row_shift == 0 { (v0, v1) } else { (v2, v3) };
-          cfa[0] = constrain(median + left, 0, max_val) as u16;
-          cfa[1] = constrain(median + right, 0, max_val) as u16;
-        }
-      }
-      3 => {
-        let median: i32 = 1 << (self.median_bits - 1) << 10;
-        let max_val: i32 = (1 << self.median_bits) - 1;
+  match codec.enc_type {
+    0 => {
+      let median: i32 = 1 << (codec.median_bits - 1);
+      let max_val: i32 = (1 << codec.median_bits) - 1;
 
-        for (cfa, v0, v1, v2, v3) in pixels {
-          let mut gr: i32 = median + (v0 << 10) - 168 * v1 - 585 * v3;
-          if gr < 0 {
-            gr = -(((gr.abs() + 512) >> 9) & !1);
-          } else {
-            gr = ((gr.abs() + 512) >> 9) & !1;
-          }
-          if row_shift == 0 {
-            cfa[0] = constrain((median + (v0 << 10) + 1510 * v3 + 512) >> 10, 0, max_val) as u16;
-            cfa[1] = constrain((v2 + gr + 1) >> 1, 0, max_val) as u16;
-          } else {
-            cfa[0] = constrain((gr - v2 + 1) >> 1, 0, max_val) as u16;
-            cfa[1] = constrain((median + (v0 << 10) + 1927 * v1 + 512) >> 10, 0, max_val) as u16;
-          }
-        }
-      }
-      enc_type => {
-        return Err(CrxError::General(format!("Unsupported encoding type {}", enc_type)));
+      for (cfa, v0, v1, v2, v3) in pixels {
+        let (left, right) = if row_shift == 0 { (v0, v1) } else { (v2, v3) };
+        cfa[0] = constrain(median + left, 0, max_val) as u16;
+        cfa[1] = constrain(median + right, 0, max_val) as u16;
       }
     }
-    Ok(())
+    3 => {
+      let median: i32 = 1 << (codec.median_bits - 1) << 10;
+      let max_val: i32 = (1 << codec.median_bits) - 1;
+
+      for (cfa, v0, v1, v2, v3) in pixels {
+        let mut gr: i32 = median + (v0 << 10) - 168 * v1 - 585 * v3;
+        if gr < 0 {
+          gr = -(((gr.abs() + 512) >> 9) & !1);
+        } else {
+          gr = ((gr.abs() + 512) >> 9) & !1;
+        }
+        if row_shift == 0 {
+          cfa[0] = constrain((median + (v0 << 10) + 1510 * v3 + 512) >> 10, 0, max_val) as u16;
+          cfa[1] = constrain((v2 + gr + 1) >> 1, 0, max_val) as u16;
+        } else {
+          cfa[0] = constrain((gr - v2 + 1) >> 1, 0, max_val) as u16;
+          cfa[1] = constrain((median + (v0 << 10) + 1927 * v1 + 512) >> 10, 0, max_val) as u16;
+        }
+      }
+    }
+    enc_type => {
+      return Err(CrxError::General(format!("Unsupported encoding type {}", enc_type)));
+    }
   }
+  Ok(())
 }
