@@ -24,18 +24,26 @@ pub(crate) struct WaveletTransform {
   band2_buf: Vec<i32>,
   /// Contains the decoded data for HH band of current level
   band3_buf: Vec<i32>,
-  /// 8 temporary buffers for inverse transformation (5/3?)
   band0_pos: usize,
   band1_pos: usize,
   band2_pos: usize,
   band3_pos: usize,
 
+  /// Line buffers of the vertical inverse transform: `[0]` is the
+  /// low-pass line, `[1]` and `[2]` are the previous and the current
+  /// high-pass line, all after the horizontal inverse transform.
+  /// `[3..8]` is a ring of 5 reconstructed lines, see `flt_tap_h`.
   line_buf: [Vec<i32>; 8],
   /// Current line position
   cur_line: usize,
-  /// TODO ???
+  /// Count of lines in the ring `line_buf[3..8]` that are reconstructed but
+  /// not yet returned by [`Self::getline`]. While it is above 0, the level
+  /// doesn't decode or transform new lines.
   cur_h: usize,
-  /// TODO ???
+  /// Ring position of the vertical filter tap H0: `line_buf[flt_tap_h + 3]`
+  /// is the last reconstructed even line, which the next lifting step needs
+  /// for the odd line after it. H1 and H2 follow at `(flt_tap_h + 1) % 5 + 3`
+  /// and `(flt_tap_h + 2) % 5 + 3`.
   flt_tap_h: usize,
   /// Height of the final image for the current level
   height: usize,
@@ -457,6 +465,8 @@ impl CodecParams {
 
           // The original libraw CRX decoder copies the pointer from line_buf[2] to [1].
           // But it doesn't makes sense, so we swap the buffers as we do on other locations.
+          // The swap has no effect: these are the last lines of the level, the buffers
+          // are not used again.
           wvlt.line_buf.swap(1, 2);
           //wvlt.line_buf[1] = wvlt.line_buf[2].clone();
 
