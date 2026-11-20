@@ -555,7 +555,7 @@ fn camera_map<const N: usize>(
   let (matrix, pixel_ops) = match render {
     Some(render) => (
       multiply(&rgb_to_prophoto(output), &cam2rgb),
-      vec![PixelOp::Profile(render), PixelOp::Matrix(prophoto_to_rgb(output))],
+      vec![PixelOp::Profile(Box::new(render)), PixelOp::Matrix(prophoto_to_rgb(output))],
     ),
     None => (cam2rgb, Vec::new()),
   };
