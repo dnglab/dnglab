@@ -127,6 +127,7 @@ mod tests {
       model: "Model".into(),
       make: "Make".into(),
       mode: "".into(),
+      reason: None,
     };
     assert!(matches!(AppError::from(unsupported), AppError::UnsupportedFile(_)));
     for err in [

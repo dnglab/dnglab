@@ -10,6 +10,8 @@ use crate::imgop::matrix::FlatMatrix;
 use crate::imgop::xyz::Illuminant;
 
 use std::collections::HashMap;
+use std::fmt;
+use std::str::FromStr;
 
 use super::BlackLevel;
 use super::WhiteLevel;
@@ -27,6 +29,8 @@ pub struct Camera {
   /// DNG LocalizedCameraModel, the market name of an alias of the camera
   pub localized_camera_model: Option<String>,
   pub remark: Option<String>,
+  /// Reason why a camera known to the database can't be decoded, `None` for supported cameras
+  pub unsupported: Option<UnsupportedReason>,
   pub filesize: usize,
   pub raw_width: usize,
   pub raw_height: usize,
@@ -53,6 +57,41 @@ pub struct Camera {
   pub best_quality_scale: BestQualityScale,
   pub hints: Vec<String>,
   pub params: HashMap<String, Value>,
+}
+
+/// Reason why a known camera is not supported, the `unsupported` key of a camera definition
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum UnsupportedReason {
+  /// There are no samples to develop and test the support with
+  MissingSamples,
+  /// The camera can't be supported for legal reasons
+  Legal,
+  /// The camera needs code changes that are not done yet, e.g. a new decompressor
+  Unimplemented,
+}
+
+impl FromStr for UnsupportedReason {
+  type Err = String;
+
+  fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    match s {
+      "missing-samples" => Ok(Self::MissingSamples),
+      "legal" => Ok(Self::Legal),
+      "unimplemented" => Ok(Self::Unimplemented),
+      _ => Err(format!("Unknown unsupported reason: {}", s)),
+    }
+  }
+}
+
+impl fmt::Display for UnsupportedReason {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    f.write_str(match self {
+      Self::MissingSamples => "missing samples",
+      Self::Legal => "legal reasons",
+      Self::Unimplemented => "support not implemented yet",
+    })
+  }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -171,6 +210,10 @@ impl Camera {
         }
         n @ "remark" => {
           self.remark = Some(val.as_str().unwrap_or_else(|| panic!("{} must be a string", n)).to_string());
+        }
+        n @ "unsupported" => {
+          let reason = val.as_str().and_then(|reason| reason.parse().ok());
+          self.unsupported = Some(reason.unwrap_or_else(|| panic!("{}: {} must be one of missing-samples, legal, unimplemented, not {}", model, n, val)));
         }
         n @ "whitepoint" => {
           self.whitelevel = Some(vec![toml_int(&model, n, val)]);
@@ -291,6 +334,7 @@ impl Camera {
       unique_camera_model: None,
       localized_camera_model: None,
       remark: None,
+      unsupported: None,
       filesize: 0,
       raw_width: 0,
       raw_height: 0,
@@ -356,27 +400,50 @@ fn toml_ints<T: TryFrom<i64>, const N: usize>(model: &str, name: &str, val: &Val
 /// Decoders are created for cameras missing in the camera database, too, so metadata
 /// and embedded previews stay available. Such cameras get a generic definition with
 /// make and model from the file, and raw decoding fails with `RawlerError::Unsupported`.
+/// The same applies to cameras in the database that are marked as unsupported, they
+/// keep their definition and the reason.
 #[derive(Debug, Clone)]
 pub(crate) struct CameraLookup {
   camera: Camera,
-  supported: bool,
+  state: CameraState,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum CameraState {
+  Supported,
+  Unknown,
+  Unsupported(UnsupportedReason),
 }
 
 impl CameraLookup {
   pub(crate) fn new_supported(camera: Camera) -> Self {
-    Self { camera, supported: true }
+    Self {
+      camera,
+      state: CameraState::Supported,
+    }
   }
 
   pub(crate) fn new_unknown(camera: Camera) -> Self {
-    Self { camera, supported: false }
+    Self {
+      camera,
+      state: CameraState::Unknown,
+    }
   }
 
-  /// Camera definition for raw decoding, fails for cameras missing in the camera database
+  pub(crate) fn new_unsupported(camera: Camera, reason: UnsupportedReason) -> Self {
+    Self {
+      camera,
+      state: CameraState::Unsupported(reason),
+    }
+  }
+
+  /// Camera definition for raw decoding, fails for cameras missing in the camera
+  /// database and for cameras marked as unsupported
   pub(crate) fn supported(&self) -> Result<&Camera> {
-    if self.supported {
-      Ok(&self.camera)
-    } else {
-      Err(RawlerError::unsupported(&self.camera, "Unknown camera"))
+    match self.state {
+      CameraState::Supported => Ok(&self.camera),
+      CameraState::Unknown => Err(RawlerError::unsupported(&self.camera, "Unknown camera")),
+      CameraState::Unsupported(reason) => Err(RawlerError::unsupported_camera(&self.camera, reason)),
     }
   }
 
