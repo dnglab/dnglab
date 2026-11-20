@@ -54,7 +54,12 @@ fn emit_version() {
   ) {
     let git_dir = PathBuf::from(git_dir);
     let common_dir = PathBuf::from(common_dir);
-    let mut watched = vec![git_dir.join("HEAD"), git_dir.join("index"), common_dir.join("packed-refs"), common_dir.join("refs/tags")];
+    let mut watched = vec![
+      git_dir.join("HEAD"),
+      git_dir.join("index"),
+      common_dir.join("packed-refs"),
+      common_dir.join("refs/tags"),
+    ];
     if let Some(head_ref) = git(&["symbolic-ref", "-q", "HEAD"]) {
       watched.push(common_dir.join(head_ref));
     }

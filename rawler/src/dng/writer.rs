@@ -34,8 +34,8 @@ use crate::{
 };
 
 use super::{
-  CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_2, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1, DNG_WRITER_VERSION,
-  DngCompression, DngPhotometricConversion, DngVersionNumber, JxlParams,
+  CompressionParams, CropMode, DNG_VERSION_V1_0, DNG_VERSION_V1_1, DNG_VERSION_V1_2, DNG_VERSION_V1_4, DNG_VERSION_V1_6, DNG_VERSION_V1_7, DNG_VERSION_V1_7_1,
+  DNG_WRITER_VERSION, DngCompression, DngPhotometricConversion, DngVersionNumber, JxlParams,
   camera_profile_tags::{camera_profile_data, rationals, write_camera_calibration, write_camera_profile, write_gain_table_map_v1, write_string},
   digest::{self, Digest, PixelType, Samples},
   opcodes::OpcodeStage,
