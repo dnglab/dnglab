@@ -12,6 +12,7 @@ use super::{
 use crate::decompressors::crx::{idwt::WaveletTransform, mdat::parse_header, rice::RiceDecoder};
 use itertools::izip;
 use log::debug;
+use multiversion::multiversion;
 use rayon::prelude::*;
 use std::collections::VecDeque;
 // No clock on wasm32-unknown-unknown: Instant::now() panics there.
@@ -274,6 +275,7 @@ impl CodecParams {
   }
 
   /// Decode top line without a previous K buffer
+  #[inline(always)]
   fn decode_top_line_no_ref_prev_line(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -328,6 +330,7 @@ impl CodecParams {
   }
 
   /// Decode nontop line with a previous K buffer
+  #[inline(always)]
   fn decode_nontop_line_no_ref_prev_line(&self, p: &mut BandParam) -> Result<()> {
     //println!("Decode nontop {}", p.cur_line);
     debug_assert_eq!(p.line_pos, 1);
@@ -400,6 +403,7 @@ impl CodecParams {
   /// For the first line (top) in a plane, no MED is used because
   /// there is no previous line for coeffs b, c and d.
   /// So this decoding is a simplified version from decode_nontop_line().
+  #[inline(always)]
   fn decode_top_line(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -447,6 +451,7 @@ impl CodecParams {
   /// Golomb-Rice becomes more efficient when using an adaptive K value
   /// instead of a fixed one.
   /// The K parameter is used as q = n >> k where n is the sample to encode.
+  #[inline(always)]
   fn decode_nontop_line(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -505,6 +510,7 @@ impl CodecParams {
 
   /// Decode a symbol x in rounded mode.
   /// Used only when levels==0 (lossless mode)
+  #[inline(always)]
   fn decode_symbol_rounded(&self, p: &mut BandParam, use_med: bool, not_eol: bool) -> Result<()> {
     let sym = if use_med { med(p.coeff_a(), p.coeff_b(), p.coeff_c()) } else { p.coeff_b() };
     let bit_code = p.rice.adaptive_rice_decode(false, PREDICT_K_ESCAPE, PREDICT_K_ESCBITS, PREDICT_K_MAX)?;
@@ -528,6 +534,7 @@ impl CodecParams {
   }
 
   /// Decode a rounded line which is not a top line
+  #[inline(always)]
   fn decode_top_line_rounded(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -577,6 +584,7 @@ impl CodecParams {
   /// instead of a fixed one.
   /// The K parameter is used as q = n >> k where n is the sample to encode.
   #[allow(clippy::comparison_chain)]
+  #[inline(always)]
   fn decode_nontop_line_rounded(&self, p: &mut BandParam) -> Result<()> {
     debug_assert_eq!(p.line_pos, 1);
     let mut remaining = p.subband_width as u32;
@@ -641,43 +649,52 @@ impl CodecParams {
   /// For non-LL bands, decoding process differs a little bit
   /// because some value rounding is added.
   pub(super) fn decode_line(&self, param: &mut BandParam) -> Result<()> {
-    debug_assert!(param.cur_line < param.subband_height);
-    // We start at first real pixel value
-    param.line_pos = 1;
-    if param.cur_line == 0 {
-      param.s_param = 0;
-      param.rice.set_k(0); // TODO: required?
-      if param.supports_partial {
-        if param.rounded_bits_mask <= 0 {
-          self.decode_top_line(param)?;
-        } else {
-          param.rounded_bits = 1;
-          if (param.rounded_bits_mask & !1) != 0 {
-            while param.rounded_bits_mask >> param.rounded_bits != 0 {
-              param.rounded_bits += 1;
-            }
-          }
-          self.decode_top_line_rounded(param)?;
-        }
-      } else {
-        self.decode_top_line_no_ref_prev_line(param)?;
-      }
-    } else if !param.supports_partial {
-      // Swap line buffers so previous decoded (1) is now above (0)
-      param.line_buf.swap(0, 1);
-      self.decode_nontop_line_no_ref_prev_line(param)?;
-    } else if param.rounded_bits_mask <= 0 {
-      // Swap line buffers so previous decoded (1) is now above (0)
-      param.line_buf.swap(0, 1);
-      self.decode_nontop_line(param)?;
-    } else {
-      // Swap line buffers so previous decoded (1) is now above (0)
-      param.line_buf.swap(0, 1);
-      self.decode_nontop_line_rounded(param)?;
-    }
-    param.cur_line += 1;
-    Ok(())
+    decode_band_line(self, param)
   }
+}
+
+/// [`CodecParams::decode_line`], built for more instruction sets
+///
+/// The Golomb-Rice decoding of the samples is scalar code with many
+/// variable shifts and a leading zero count, it gains from BMI2 and LZCNT.
+#[multiversion(targets("x86_64+bmi2+lzcnt"))]
+fn decode_band_line(codec: &CodecParams, param: &mut BandParam) -> Result<()> {
+  debug_assert!(param.cur_line < param.subband_height);
+  // We start at first real pixel value
+  param.line_pos = 1;
+  if param.cur_line == 0 {
+    param.s_param = 0;
+    param.rice.set_k(0); // TODO: required?
+    if param.supports_partial {
+      if param.rounded_bits_mask <= 0 {
+        codec.decode_top_line(param)?;
+      } else {
+        param.rounded_bits = 1;
+        if (param.rounded_bits_mask & !1) != 0 {
+          while param.rounded_bits_mask >> param.rounded_bits != 0 {
+            param.rounded_bits += 1;
+          }
+        }
+        codec.decode_top_line_rounded(param)?;
+      }
+    } else {
+      codec.decode_top_line_no_ref_prev_line(param)?;
+    }
+  } else if !param.supports_partial {
+    // Swap line buffers so previous decoded (1) is now above (0)
+    param.line_buf.swap(0, 1);
+    codec.decode_nontop_line_no_ref_prev_line(param)?;
+  } else if param.rounded_bits_mask <= 0 {
+    // Swap line buffers so previous decoded (1) is now above (0)
+    param.line_buf.swap(0, 1);
+    codec.decode_nontop_line(param)?;
+  } else {
+    // Swap line buffers so previous decoded (1) is now above (0)
+    param.line_buf.swap(0, 1);
+    codec.decode_nontop_line_rounded(param)?;
+  }
+  param.cur_line += 1;
+  Ok(())
 }
 
 /// Constrain a given value into min/max
@@ -738,44 +755,54 @@ impl CodecParams {
   /// By using a median and max value, these are converted
   /// to unsigned 16 bit integers.
   fn convert_cfa_line(&self, lines: [&[i32]; 4], row_shift: usize, cfa_row: &mut [u16]) -> Result<()> {
-    let [l0, l1, l2, l3] = lines;
-    let pixels = izip!(cfa_row.as_chunks_mut::<2>().0, l0, l1, l2, l3);
+    cfa_line_from_planes(self, lines, row_shift, cfa_row)
+  }
+}
 
-    match self.enc_type {
-      0 => {
-        let median: i32 = 1 << (self.median_bits - 1);
-        let max_val: i32 = (1 << self.median_bits) - 1;
+/// [`CodecParams::convert_cfa_line`], built for more instruction sets
+///
+/// The conversion is vectorized. The one of `enc_type` 3 multiplies 32 bit
+/// values, which AVX2 does with 8 lanes and AVX-512 with 16, both without
+/// emulation.
+#[multiversion(targets("x86_64+avx512f+avx512bw+avx512vl", "x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
+fn cfa_line_from_planes(codec: &CodecParams, lines: [&[i32]; 4], row_shift: usize, cfa_row: &mut [u16]) -> Result<()> {
+  let [l0, l1, l2, l3] = lines;
+  let pixels = izip!(cfa_row.as_chunks_mut::<2>().0, l0, l1, l2, l3);
 
-        for (cfa, v0, v1, v2, v3) in pixels {
-          let (left, right) = if row_shift == 0 { (v0, v1) } else { (v2, v3) };
-          cfa[0] = constrain(median + left, 0, max_val) as u16;
-          cfa[1] = constrain(median + right, 0, max_val) as u16;
-        }
-      }
-      3 => {
-        let median: i32 = 1 << (self.median_bits - 1) << 10;
-        let max_val: i32 = (1 << self.median_bits) - 1;
+  match codec.enc_type {
+    0 => {
+      let median: i32 = 1 << (codec.median_bits - 1);
+      let max_val: i32 = (1 << codec.median_bits) - 1;
 
-        for (cfa, v0, v1, v2, v3) in pixels {
-          let mut gr: i32 = median + (v0 << 10) - 168 * v1 - 585 * v3;
-          if gr < 0 {
-            gr = -(((gr.abs() + 512) >> 9) & !1);
-          } else {
-            gr = ((gr.abs() + 512) >> 9) & !1;
-          }
-          if row_shift == 0 {
-            cfa[0] = constrain((median + (v0 << 10) + 1510 * v3 + 512) >> 10, 0, max_val) as u16;
-            cfa[1] = constrain((v2 + gr + 1) >> 1, 0, max_val) as u16;
-          } else {
-            cfa[0] = constrain((gr - v2 + 1) >> 1, 0, max_val) as u16;
-            cfa[1] = constrain((median + (v0 << 10) + 1927 * v1 + 512) >> 10, 0, max_val) as u16;
-          }
-        }
-      }
-      enc_type => {
-        return Err(CrxError::General(format!("Unsupported encoding type {}", enc_type)));
+      for (cfa, v0, v1, v2, v3) in pixels {
+        let (left, right) = if row_shift == 0 { (v0, v1) } else { (v2, v3) };
+        cfa[0] = constrain(median + left, 0, max_val) as u16;
+        cfa[1] = constrain(median + right, 0, max_val) as u16;
       }
     }
-    Ok(())
+    3 => {
+      let median: i32 = 1 << (codec.median_bits - 1) << 10;
+      let max_val: i32 = (1 << codec.median_bits) - 1;
+
+      for (cfa, v0, v1, v2, v3) in pixels {
+        let mut gr: i32 = median + (v0 << 10) - 168 * v1 - 585 * v3;
+        if gr < 0 {
+          gr = -(((gr.abs() + 512) >> 9) & !1);
+        } else {
+          gr = ((gr.abs() + 512) >> 9) & !1;
+        }
+        if row_shift == 0 {
+          cfa[0] = constrain((median + (v0 << 10) + 1510 * v3 + 512) >> 10, 0, max_val) as u16;
+          cfa[1] = constrain((v2 + gr + 1) >> 1, 0, max_val) as u16;
+        } else {
+          cfa[0] = constrain((gr - v2 + 1) >> 1, 0, max_val) as u16;
+          cfa[1] = constrain((median + (v0 << 10) + 1927 * v1 + 512) >> 10, 0, max_val) as u16;
+        }
+      }
+    }
+    enc_type => {
+      return Err(CrxError::General(format!("Unsupported encoding type {}", enc_type)));
+    }
   }
+  Ok(())
 }
