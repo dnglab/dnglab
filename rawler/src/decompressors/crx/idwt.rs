@@ -283,9 +283,9 @@ impl CodecParams {
           for i in 0..h0.len() {
             h0[i] = even_sample_edge(l0[i], l2[i]);
           }
-          self.idwt_53_filter_decode(tile, plane, params, iwt_transforms, cur_level)?;
-          self.idwt_53_filter_transform(tile, plane, params, iwt_transforms, cur_level)?;
         }
+        self.idwt_53_filter_decode(tile, plane, params, iwt_transforms, cur_level)?;
+        self.idwt_53_filter_transform(tile, plane, params, iwt_transforms, cur_level)?;
       } else {
         // This is unused in real world
 
