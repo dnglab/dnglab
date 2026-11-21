@@ -207,6 +207,7 @@ Pentax/K-S1/raw_modes
 Pentax/K-x/raw_modes
 Pentax/K20D/raw_modes
 Pentax/K110D/raw_modes
+Pentax/K2000/raw_modes
 Phase One/IQ3 100MP/raw_modes
 Phase One/H 25/raw_modes
 Phase One/iXM-100/raw_modes

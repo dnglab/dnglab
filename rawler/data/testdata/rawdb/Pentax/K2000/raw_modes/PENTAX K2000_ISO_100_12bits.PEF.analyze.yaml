@@ -1,0 +1,115 @@
+---
+file:
+  fileSize: 12485449
+  fileName: PENTAX K2000_ISO_100_12bits.PEF
+  digest: a3222f71820a112498fc8f6560c4f116
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3936
+      rawHeight: 2624
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 3872
+          h: 2592
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3896
+          h: 2616
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.6875
+        - 1.0
+        - 1.4179688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/500
+        fnumber: 56/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2009:05:02 13:23:47"
+        create_date: "2009:05:02 13:23:47"
+        modify_date: "2009:05:02 13:23:47"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 4000/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA L 18-55mm F3.5-5.6
+        gps: ~
+        user_comment: ~
+      model: K2000
+      make: Pentax
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 7
+            - 222
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Pentax
+        lens_model: smc PENTAX-DA L 18-55mm F3.5-5.6
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Pentax smc PENTAX-DA L 18-55mm F3.5-5.6
+      unique_image_id: ~
+      rating: ~
+

@@ -2769,6 +2769,9 @@ mod pentax {
   mod k110d_raw_modes {
     super::super::rawdb_test_file!("Pentax", "K110D", pentax_k110d_raw_iso_200_pef, "raw_modes/PENTAX K110D_RAW_ISO_200.PEF");
   }
+  mod k2000_raw_modes {
+    super::super::rawdb_test_file!("Pentax", "K2000", pentax_k2000_iso_100_12bits_pef, "raw_modes/PENTAX K2000_ISO_100_12bits.PEF");
+  }
   mod k200d_raw_modes {
     super::super::rawdb_test_file!("Pentax", "K200D", pentax_k200d_raw_iso_100_pef, "raw_modes/PENTAX K200D_RAW_ISO_100.PEF");
   }
