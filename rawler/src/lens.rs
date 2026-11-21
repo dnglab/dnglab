@@ -245,6 +245,21 @@ impl LensResolver {
         self.aperture.as_ref().is_none_or(|ap| *ap >= entry.aperture_range[0]) // equal or greater then lowest possible aperture
       })
       .collect();
+    // Several entries can share an id (Canon gives third-party lenses
+    // one): when the file carries a LensSpecification, the entry whose
+    // focal range it is wins.
+    let matches: Vec<&LensDescription> = match (&self.lens_info, matches.len()) {
+      (Some(info), n) if n > 1 => {
+        let same = |a: &Rational, b: &Rational| a.d != 0 && b.d != 0 && a.n * b.d == b.n * a.d;
+        let narrowed: Vec<&LensDescription> = matches
+          .iter()
+          .copied()
+          .filter(|entry| same(&entry.focal_range[0], &info[0]) && same(&entry.focal_range[1], &info[1]))
+          .collect();
+        if narrowed.len() == 1 { narrowed } else { matches }
+      }
+      _ => matches,
+    };
     match matches.len() {
       1 => return Some(matches[0]),
       c if c > 1 => {
@@ -284,6 +299,9 @@ impl Display for LensResolver {
     }
     if let Some(name) = &self.focal_len {
       s.push(format!("Focal len: '{}'", name));
+    }
+    if let Some(info) = &self.lens_info {
+      s.push(format!("Lens spec: '{} {} {} {}'", info[0], info[1], info[2], info[3]));
     }
     if s.is_empty() { f.write_str("<EMPTY>") } else { f.write_str(&s.join(", ")) }
   }
