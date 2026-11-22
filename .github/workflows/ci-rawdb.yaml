@@ -38,12 +38,45 @@ jobs:
           # by the builddrone environment before this code ever runs.
           ref: ${{ github.event.pull_request.head.sha }}
           allow-unsafe-pr-checkout: true
+          # The test selection needs the merge base of the pull request
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{matrix.rust}}
-      - run: cargo test --release --features rawdb-tests
+      # A pull request that changes only test data runs only the tests of the
+      # samples it touches. The selection script comes from the base commit, so
+      # a pull request can't change it. If it fails, all tests run.
+      - name: Select the rawdb tests
+        id: select
+        if: github.event_name == 'pull_request_target'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          script="$RUNNER_TEMP/select_rawdb_tests.py"
+          if git show "$BASE_SHA:.github/scripts/select_rawdb_tests.py" > "$script" \
+            && python3 -I "$script" --base "$BASE_SHA" > "$RUNNER_TEMP/select_rawdb_tests.out"; then
+            cat "$RUNNER_TEMP/select_rawdb_tests.out" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run all rawdb tests
+        if: steps.select.outputs.mode != 'selected'
+        run: cargo test --release --features rawdb-tests
         env:
           RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
+      - name: Run the selected rawdb tests
+        if: steps.select.outputs.mode == 'selected'
+        env:
+          RAWDB_API_KEY: ${{ secrets.RAWDB_API_KEY }}
+          TESTS: ${{ steps.select.outputs.tests }}
+        run: |
+          if [ -n "$TESTS" ]; then
+            # $TESTS is split on purpose: one argument per test name
+            cargo test --release -p rawler --features rawdb-tests --test mod -- --exact $TESTS
+          else
+            # No test is affected, the tests only have to build
+            cargo test --release -p rawler --features rawdb-tests --test mod --no-run
+          fi
       # Run every example of the workspace (see AGENTS.md)
       - run: cargo run -p rawler --release --example develop -- "$RUNNER_TEMP/develop.jpg"
         env:
