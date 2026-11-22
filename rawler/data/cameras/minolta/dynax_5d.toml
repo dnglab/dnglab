@@ -4,6 +4,7 @@ clean_make = "Minolta"
 clean_model = "Dynax 5D"
 model_aliases = [
   ["MAXXUM 5D", "Maxxum 5D"],
+  ["ALPHA SWEET DIGITAL", "Alpha Sweet Digital"],
   ["ALPHA-5 DIGITAL", "Alpha-5 Digital"]
 ]
 blackpoint = 0
