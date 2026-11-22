@@ -1607,6 +1607,14 @@ mod nikon {
     super::super::rawdb_test_file!("Nikon", "D5600", nikon_d5600_iso_200_12bits_lossy_type_2_nef, "raw_modes/NIKON D5600_ISO_200_12bits_Lossy (type 2).NEF");
     super::super::rawdb_test_file!("Nikon", "D5600", nikon_d5600_iso_200_14bits_lossy_type_2_nef, "raw_modes/NIKON D5600_ISO_200_14bits_Lossy (type 2).NEF");
   }
+  mod d6_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "D6", nikon_d6_iso_100_12bits_lossless_nef, "raw_modes/NIKON D6_ISO_100_12bits_Lossless.NEF");
+    super::super::rawdb_test_file!("Nikon", "D6", nikon_d6_iso_100_12bits_lossy_type_2_nef, "raw_modes/NIKON D6_ISO_100_12bits_Lossy (type 2).NEF");
+    super::super::rawdb_test_file!("Nikon", "D6", nikon_d6_iso_100_12bits_uncompressed_reduced_to_12_bit_nef, "raw_modes/NIKON D6_ISO_100_12bits_Uncompressed (reduced to 12 bit).NEF");
+    super::super::rawdb_test_file!("Nikon", "D6", nikon_d6_iso_100_14bits_lossless_nef, "raw_modes/NIKON D6_ISO_100_14bits_Lossless.NEF");
+    super::super::rawdb_test_file!("Nikon", "D6", nikon_d6_iso_100_14bits_lossy_type_2_nef, "raw_modes/NIKON D6_ISO_100_14bits_Lossy (type 2).NEF");
+    super::super::rawdb_test_file!("Nikon", "D6", nikon_d6_iso_100_14bits_packed_14_bits_nef, "raw_modes/NIKON D6_ISO_100_14bits_Packed 14 bits.NEF");
+  }
   mod d60_raw_modes {
     super::super::rawdb_test_file!("Nikon", "D60", nikon_d60_iso_100_12bits_lossy_type_1_nef, "raw_modes/NIKON D60_ISO_100_12bits_Lossy (type 1).NEF");
   }

@@ -280,6 +280,7 @@ Nikon/D7000/raw_modes
 Nikon/1 V3/raw_modes
 Nikon/D5100/raw_modes
 Nikon/D60/raw_modes
+Nikon/D6/raw_modes
 Nikon/D3200/raw_modes
 Nikon/D750/raw_modes
 Nikon/D80/raw_modes
