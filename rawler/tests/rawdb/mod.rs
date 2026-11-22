@@ -1679,6 +1679,14 @@ mod nikon {
     super::super::rawdb_test_file!("Nikon", "D810", nikon_d810_iso_100_14bits_lossy_type_2_nef, "raw_modes/NIKON D810_ISO_100_14bits_Lossy (type 2).NEF");
     super::super::rawdb_test_file!("Nikon", "D810", nikon_d810_iso_100_14bits_uncompressed_nef, "raw_modes/NIKON D810_ISO_100_14bits_Uncompressed.NEF");
   }
+  mod d810a_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "D810A", d810a_small_nef, "raw_modes/D810A_Small.nef");
+    super::super::rawdb_test_file!("Nikon", "D810A", d810a_lossless_nef, "raw_modes/D810A_lossless.nef");
+    super::super::rawdb_test_file!("Nikon", "D810A", d810a_lossy14bits_nef, "raw_modes/D810A_lossy14bits.nef");
+    super::super::rawdb_test_file!("Nikon", "D810A", d810a_lossy_12bits_nef, "raw_modes/D810A_lossy_12bits.nef");
+    super::super::rawdb_test_file!("Nikon", "D810A", d810a_uncompressed_nef, "raw_modes/D810A_uncompressed.nef");
+    super::super::rawdb_test_file!("Nikon", "D810A", d810a_uncompressed_12bits_nef, "raw_modes/D810A_uncompressed_12bits.nef");
+  }
   mod d850_raw_modes {
     super::super::rawdb_test_file!("Nikon", "D850", nikon_d850_large_iso_64_12bits_lossless_nef, "raw_modes/NIKON D850_Large_ISO_64_12bits_Lossless.NEF");
     super::super::rawdb_test_file!("Nikon", "D850", nikon_d850_large_iso_64_12bits_lossy_type_2_nef, "raw_modes/NIKON D850_Large_ISO_64_12bits_Lossy (type 2).NEF");

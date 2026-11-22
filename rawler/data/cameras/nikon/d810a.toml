@@ -1,0 +1,19 @@
+make = "NIKON CORPORATION"
+model = "NIKON D810A"
+clean_make = "Nikon"
+clean_model = "D810A"
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [12, 8, 8, 8]
+
+[cameras.color_matrix]
+A = [1.4786, -0.8944, 0.1413, -0.1733, 0.9718, 0.2367, 0.0246, 0.0579, 0.8318]
+D65 = [1.1973, -0.5685, -0.0888, -0.1965, 1.0326, 0.1901, -0.0115, 0.1123, 0.7169]
+
+[[cameras.modes]]
+mode = "12bit"
+whitepoint = 3880
+
+[[cameras.modes]]
+mode = "14bit"
+whitepoint = 15520
