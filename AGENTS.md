@@ -7,6 +7,14 @@ in `.github/workflows/ci-rawdb.yaml` that runs it. `cargo test` only compiles
 examples; that job runs them with the rawdb sample cache and the API key.
 Steps write the output of examples to `$RUNNER_TEMP`, not into the checkout.
 
+## rawdb tests of pull requests
+
+A pull request that changes only camera definitions, rawdb snapshots and the
+generated rawdb test files runs only the rawdb tests of the samples it touches.
+`.github/scripts/select_rawdb_tests.py` decides that from the paths of the
+changed files. Update its path rules in the same change when you move these
+files or add new kinds of test data.
+
 ## Render pipeline documentation
 
 `docs/render.md` describes the render pipeline from raw data to the output
