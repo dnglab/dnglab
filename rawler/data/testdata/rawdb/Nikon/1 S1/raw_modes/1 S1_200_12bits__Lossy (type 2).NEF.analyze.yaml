@@ -1,0 +1,127 @@
+---
+file:
+  fileSize: 8896909
+  fileName: 1 S1_200_12bits__Lossy (type 2).NEF
+  digest: a704c54926bb716fb8fc7cfc618316a2
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3948
+      rawHeight: 2604
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 6
+        d:
+          w: 3872
+          h: 2592
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3948
+          h: 2604
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 2.015625
+        - 1.0
+        - 1.8203125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/5000
+        fnumber: 28/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2022:07:02 09:14:16"
+        create_date: "2022:07:02 09:14:16"
+        modify_date: "2022:07:02 09:14:16"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "24"
+        sub_sec_time_original: "24"
+        sub_sec_time_digitized: "24"
+        shutter_speed_value: ~
+        max_aperture_value: 16/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 185/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: 1 NIKKOR 18.5mm f/1.8
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: 1 S1
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

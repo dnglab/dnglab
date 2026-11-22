@@ -266,6 +266,7 @@ Nikon/D3300/raw_modes
 Nikon/D5000/raw_modes
 Nikon/D7100/raw_modes
 Nikon/1 S2/raw_modes
+Nikon/1 S1/raw_modes
 Nikon/D90/raw_modes
 Nikon/1 AW1/raw_modes
 Nikon/D5/raw_modes
