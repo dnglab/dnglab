@@ -1369,6 +1369,9 @@ mod minolta {
     super::super::rawdb_test_file!("Minolta", "DiMAGE G600", minolta_dimage_g600_1_mrw, "raw_modes/Minolta_DiMAGE_G600_1.MRW");
     super::super::rawdb_test_file!("Minolta", "DiMAGE G600", minolta_dimage_g600_2_mrw, "raw_modes/Minolta_DiMAGE_G600_2.MRW");
   }
+  mod dynax_5d_raw_modes {
+    super::super::rawdb_test_file!("Minolta", "Dynax 5D", dynax_5d_iso_100_uncompressed_mrw, "raw_modes/DYNAX 5D_ISO_100_Uncompressed.MRW");
+  }
   mod dynax_7d_raw_modes {
     super::super::rawdb_test_file!("Minolta", "Dynax 7D", dynax_7d_iso_100_uncompressed_mrw, "raw_modes/DYNAX 7D_ISO_100_Uncompressed.MRW");
   }

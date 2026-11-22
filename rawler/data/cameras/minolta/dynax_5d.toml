@@ -1,0 +1,17 @@
+make = "KONICA MINOLTA"
+model = "DYNAX 5D"
+clean_make = "Minolta"
+clean_model = "Dynax 5D"
+model_aliases = [
+  ["MAXXUM 5D", "Maxxum 5D"],
+  ["ALPHA-5 DIGITAL", "Alpha-5 Digital"]
+]
+blackpoint = 0
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [4, 4, 4, 4]
+
+[cameras.color_matrix]
+A = [1.2561, -0.5625, 0.0162, -0.7016, 1.4543, 0.2693, -0.0489, 0.0628, 0.6558]
+D65 = [1.0284, -0.3283, -0.1086, -0.7957, 1.5762, 0.2316, -0.0829, 0.0882, 0.6644]
