@@ -1344,6 +1344,9 @@ mod minolta {
   mod alpha_7_digital_raw_modes {
     super::super::rawdb_test_file!("Minolta", "ALPHA-7 DIGITAL", alpha_7_digital_iso_200_uncompressed_mrw, "raw_modes/ALPHA-7 DIGITAL_ISO_200_Uncompressed.MRW");
   }
+  mod alpha_sweet_digital_raw_modes {
+    super::super::rawdb_test_file!("Minolta", "Alpha Sweet Digital", alpha_sweet_digital_iso_400_uncompressed_mrw, "raw_modes/ALPHA_SWEET_DIGITAL_ISO_400_Uncompressed.MRW");
+  }
   mod dimage_5_raw_modes {
     super::super::rawdb_test_file!("Minolta", "DiMAGE 5", dimage_5_iso_100_uncompressed_mrw, "raw_modes/DiMAGE 5_ISO_100_Uncompressed.MRW");
   }
