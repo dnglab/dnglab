@@ -1,0 +1,12 @@
+make = "SAMSUNG TECHWIN"
+model = "GX-1L"
+clean_make = "Samsung"
+clean_model = "GX-1L"
+whitepoint = 4095
+color_pattern = "RGGB"
+active_area = [0, 0, 0, 0]
+crop_area = [16, 8, 16, 8]
+
+[cameras.color_matrix]
+A = [1.2103, -0.4029, -0.0305, -0.7418, 1.4722, 0.2947, -0.0646, 0.0688, 1.1833]
+D65 = [1.0504, -0.2439, -0.1189, -0.8603, 1.6208, 0.2531, -0.1022, 0.0863, 1.2242]

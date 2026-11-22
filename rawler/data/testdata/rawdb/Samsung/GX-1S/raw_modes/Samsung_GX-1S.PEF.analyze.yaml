@@ -1,0 +1,94 @@
+---
+file:
+  fileSize: 11489717
+  fileName: Samsung_GX-1S.PEF
+  digest: db6a24a3ff6508629b40a00b341d0c7c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3040
+      rawHeight: 2024
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 3008
+          h: 2008
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3040
+          h: 2024
+      blacklevels:
+        levels:
+          - 127/1
+          - 127/1
+          - 128/1
+          - 127/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 3950
+      wbCoeffs:
+        - 1.5742188
+        - 1.0
+        - 1.0
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 1/320
+        fnumber: 0/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2017:03:04 12:41:50"
+        create_date: "2017:03:04 12:41:50"
+        modify_date: "2017:03:04 12:41:50"
+        exposure_program: 1
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 2
+        light_source: ~
+        flash: 16
+        focal_length: 0/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 1
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 3
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: GX-1S
+      make: Samsung
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

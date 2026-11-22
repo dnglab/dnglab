@@ -1,0 +1,115 @@
+---
+file:
+  fileSize: 11815796
+  fileName: GX-1L_ISO_200_12bits.PEF
+  digest: c7759cabc3db9e0c4f97361e8a8676fe
+data:
+  metadata:
+    rawParams:
+      rawWidth: 3040
+      rawHeight: 2024
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 16
+          y: 8
+        d:
+          w: 3008
+          h: 2008
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 3040
+          h: 2024
+      blacklevels:
+        levels:
+          - 127/1
+          - 128/1
+          - 128/1
+          - 127/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 4095
+      wbCoeffs:
+        - 1.4257812
+        - 1.0
+        - 1.1953125
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 18/1
+          - 55/1
+          - 35/10
+          - 56/10
+        exposure_time: 1/60
+        fnumber: 110/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10
+        date_time_original: "2025:06:15 12:11:24"
+        create_date: "2025:06:15 12:11:24"
+        modify_date: "2025:06:15 12:11:24"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: 5
+        light_source: ~
+        flash: 16
+        focal_length: 28/1
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 2
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Samsung/Schneider
+        lens_model: Samsung/Schneider D-XENON 18-55mm F3.5-5.6
+        gps: ~
+        user_comment: ~
+      model: GX-1L
+      make: Samsung
+      lens:
+        identifiers:
+          name: ~
+          id:
+            - 4
+            - 246
+          nikon_id: ~
+          olympus_id: ~
+        mount: k-mount
+        lens_make: Samsung/Schneider
+        lens_model: Samsung/Schneider D-XENON 18-55mm F3.5-5.6
+        focal_range:
+          - 18/1
+          - 55/1
+        aperture_range:
+          - 35/10
+          - 56/10
+        lens_name: Samsung/Schneider Samsung/Schneider D-XENON 18-55mm F3.5-5.6
+      unique_image_id: ~
+      rating: ~
+
