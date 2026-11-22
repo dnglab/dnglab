@@ -1,0 +1,149 @@
+---
+file:
+  fileSize: 44407923
+  fileName: D810A_lossy14bits.nef
+  digest: 1887e57e6fc1cab0f9012d30975982e1
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7380
+      rawHeight: 4928
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 12
+          y: 8
+        d:
+          w: 7360
+          h: 4912
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 7380
+          h: 4928
+      blacklevels:
+        levels:
+          - 600/1
+          - 600/1
+          - 600/1
+          - 600/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 15520
+      wbCoeffs:
+        - 1.8007812
+        - 1.0
+        - 1.484375
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: Thierry PIERRE
+        artist: Thierry PIERRE
+        lens_spec:
+          - 70/1
+          - 200/1
+          - 28/10
+          - 28/10
+        exposure_time: 10/4000
+        fnumber: 100/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 640
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 0/6
+        date_time_original: "2026:07:19 17:50:17"
+        create_date: "2026:07:19 17:50:17"
+        modify_date: "2026:07:19 17:50:17"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "95"
+        sub_sec_time_original: "95"
+        sub_sec_time_digitized: "95"
+        shutter_speed_value: ~
+        max_aperture_value: 30/10
+        subject_distance: ~
+        metering_mode: 3
+        light_source: 0
+        flash: 16
+        focal_length: 700/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 70-200mm f/2.8G ED VR II
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: D810A
+      make: Nikon
+      lens:
+        identifiers:
+          name: ~
+          id: ~
+          nikon_id: A2 48 5C 80 24 24 A4 0E
+          olympus_id: ~
+        mount: F-mount
+        lens_make: Nikon
+        lens_model: AF-S Nikkor 70-200mm f/2.8G ED VR II
+        focal_range:
+          - 70/1
+          - 200/1
+        aperture_range:
+          - 28/10
+          - 28/10
+        lens_name: Nikon AF-S Nikkor 70-200mm f/2.8G ED VR II
+      unique_image_id: ~
+      rating: ~
+

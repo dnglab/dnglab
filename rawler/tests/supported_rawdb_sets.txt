@@ -274,6 +274,7 @@ Nikon/COOLPIX A1000/raw_modes
 Nikon/E8400/raw_modes
 Nikon/D100/raw_modes
 Nikon/D810/raw_modes
+Nikon/D810A/raw_modes
 Nikon/1 J1/raw_modes
 Nikon/D7000/raw_modes
 Nikon/1 V3/raw_modes
