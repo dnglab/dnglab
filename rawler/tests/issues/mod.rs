@@ -130,9 +130,9 @@ fn cr3_highlight_tone_priority_sets_baseline_exposure() -> std::result::Result<(
 }
 
 /// Samples of the Nikon Scan software: model, file, bits per sample and description of its ICC profile
-const COOLSCAN_5000: (&str, &str, usize, &str) = ("Nikon COOLSCAN 5000 ED", "raw_modes/nikon-super-coolscan-5000-ed.nef", 16, "Nikon sRGB 4.0.0.3001");
-const COOLSCAN_IV: (&str, &str, usize, &str) = ("Nikon COOLSCAN IV ED", "raw_modes/NEF_from_Nikon_Scan_4.0.3_at_600dpi.nef", 8, "Nikon sRGB 4.0.0.3002");
-const COOLSCAN_V: (&str, &str, usize, &str) = ("Nikon COOLSCAN V ED", "raw_modes/Coolscan_V_ED_600px.nef", 16, "Nikon AdobeWide RGB 4.0.0.3001");
+const COOLSCAN_5000: (&str, &str, usize, &str) = ("Super COOLSCAN 5000 ED", "raw_modes/nikon-super-coolscan-5000-ed.nef", 16, "Nikon sRGB 4.0.0.3001");
+const COOLSCAN_IV: (&str, &str, usize, &str) = ("COOLSCAN IV ED", "raw_modes/NEF_from_Nikon_Scan_4.0.3_at_600dpi.nef", 8, "Nikon sRGB 4.0.0.3002");
+const COOLSCAN_V: (&str, &str, usize, &str) = ("COOLSCAN V ED", "raw_modes/Coolscan_V_ED_600px.nef", 16, "Nikon AdobeWide RGB 4.0.0.3001");
 
 fn decode_raw(source: &RawSource) -> std::result::Result<RawImage, Box<dyn std::error::Error>> {
   Ok(rawler::get_decoder(source)?.raw_image(source, &RawDecodeParams::default(), false)?)
