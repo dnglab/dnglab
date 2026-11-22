@@ -446,6 +446,7 @@ Arri/Alexa Mini/raw_modes
 Arri/Alexa SXT/raw_modes
 Arri/Alexa XT/raw_modes
 Minolta/ALPHA-7 DIGITAL/raw_modes
+Minolta/Alpha Sweet Digital/raw_modes
 Minolta/DiMAGE 7Hi/raw_modes
 Minolta/DiMAGE 7i/raw_modes
 Minolta/DiMAGE 7/raw_modes
