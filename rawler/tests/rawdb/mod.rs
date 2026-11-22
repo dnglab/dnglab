@@ -2894,6 +2894,12 @@ mod samsung {
   mod ex2f_raw_modes {
     super::super::rawdb_test_file!("Samsung", "EX2F", ex2f_iso_480_packed_raw_srw, "raw_modes/EX2F_ISO_480_Packed RAW.SRW");
   }
+  mod gx_1l_raw_modes {
+    super::super::rawdb_test_file!("Samsung", "GX-1L", gx_1l_iso_200_12bits_pef, "raw_modes/GX-1L_ISO_200_12bits.PEF");
+  }
+  mod gx_1s_raw_modes {
+    super::super::rawdb_test_file!("Samsung", "GX-1S", samsung_gx_1s_pef, "raw_modes/Samsung_GX-1S.PEF");
+  }
   mod nx_mini_raw_modes {
     super::super::rawdb_test_file!("Samsung", "NX mini", nx_mini_iso_1000_samsung_srw_compressed_2_srw, "raw_modes/NX mini_ISO_1000_Samsung SRW Compressed 2.SRW");
   }

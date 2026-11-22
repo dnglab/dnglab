@@ -1224,6 +1224,8 @@ impl RawLoader {
             "PENTAX" => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
             "PENTAX Corporation" => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
             "RICOH IMAGING COMPANY, LTD." => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
+            // The GX-1S and GX-1L are Pentax cameras sold under the Samsung name
+            "SAMSUNG TECHWIN" => return use_decoder!(pef::PefDecoder, rawfile, tiff, self),
             "Phase One" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
             "Phase One A/S" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
             "Leaf" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
