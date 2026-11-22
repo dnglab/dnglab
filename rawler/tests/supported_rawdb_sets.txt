@@ -454,6 +454,7 @@ Minolta/DiMAGE A200/raw_modes
 Minolta/DiMAGE A2/raw_modes
 Minolta/DiMAGE G600/raw_modes
 Minolta/Dynax 7D/raw_modes
+Minolta/Dynax 5D/raw_modes
 Minolta/Maxxum 7D/raw_modes
 Mamiya/ZD/raw_modes
 Hasselblad/CFV-50/raw_modes
