@@ -1,0 +1,127 @@
+---
+file:
+  fileSize: 19020297
+  fileName: 1 J4_ISO_160_12bits_Lossy (type 2).NEF
+  digest: c3a7281eef245dbc7033a2b273564fc3
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5248
+      rawHeight: 3504
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 8
+          y: 8
+        d:
+          w: 5232
+          h: 3488
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 5248
+          h: 3504
+      blacklevels:
+        levels:
+          - 200/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 4000
+      wbCoeffs:
+        - 2.8164062
+        - 1.0
+        - 1.7304688
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 10/1000
+        fnumber: 100/10
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: 160
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: "-2/6"
+        date_time_original: "2016:07:19 13:39:26"
+        create_date: "2016:07:19 13:39:26"
+        modify_date: "2016:07:19 13:39:26"
+        exposure_program: 4
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: "66"
+        sub_sec_time_original: "66"
+        sub_sec_time_digitized: "66"
+        shutter_speed_value: ~
+        max_aperture_value: 36/10
+        subject_distance: ~
+        metering_mode: 5
+        light_source: 0
+        flash: 0
+        focal_length: 100/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 1
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: 1 NIKKOR VR 10-30mm f/3.5-5.6
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: ~
+          gps_latitude: ~
+          gps_longitude_ref: ~
+          gps_longitude: ~
+          gps_altitude_ref: ~
+          gps_altitude: ~
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: 1 J4
+      make: Nikon
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
