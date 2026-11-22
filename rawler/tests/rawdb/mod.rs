@@ -1144,6 +1144,12 @@ mod hasselblad {
   mod h3d_raw_modes {
     super::super::rawdb_test_file!("Hasselblad", "H3D", hasselblad_h3d_iso_50_jpeg_3fr, "raw_modes/Hasselblad H3D_ISO_50_JPEG.3FR");
   }
+  mod h4d_raw_modes {
+    super::super::rawdb_test_file!("Hasselblad", "H4D", hasselblad_h4d_iso_50_jpeg_3fr, "raw_modes/Hasselblad H4D_ISO_50_JPEG.3FR");
+  }
+  mod h4d_40_raw_modes {
+    super::super::rawdb_test_file!("Hasselblad", "H4D-40", hasselblad_h4d_40_iso_100_jpeg_fff, "raw_modes/Hasselblad H4D-40_ISO_100_JPEG.FFF");
+  }
   mod h4d_50_raw_modes {
     super::super::rawdb_test_file!("Hasselblad", "H4D-50", hasselblad_h4d_50_iso_100_jpeg_fff, "raw_modes/Hasselblad H4D-50_ISO_100_JPEG.FFF");
   }
@@ -1153,23 +1159,17 @@ mod hasselblad {
   mod h5d_50c_raw_modes {
     super::super::rawdb_test_file!("Hasselblad", "H5D-50c", hasselblad_h5d_50c_iso_100_jpeg_fff, "raw_modes/Hasselblad H5D-50c_ISO_100_JPEG.FFF");
   }
-  mod hasselblad_h4d_raw_modes {
-    super::super::rawdb_test_file!("Hasselblad", "Hasselblad H4D", hasselblad_h4d_iso_50_jpeg_3fr, "raw_modes/Hasselblad H4D_ISO_50_JPEG.3FR");
+  mod h6d_100cms_raw_modes {
+    super::super::rawdb_test_file!("Hasselblad", "H6D-100cMS", hasselblad_h6d_100cms_iso_64_jpeg_fff, "raw_modes/Hasselblad H6D-100cMS_ISO_64_JPEG.FFF");
   }
-  mod hasselblad_h4d_40_raw_modes {
-    super::super::rawdb_test_file!("Hasselblad", "Hasselblad H4D-40", hasselblad_h4d_40_iso_100_jpeg_fff, "raw_modes/Hasselblad H4D-40_ISO_100_JPEG.FFF");
-  }
-  mod hasselblad_h6d_100cms_raw_modes {
-    super::super::rawdb_test_file!("Hasselblad", "Hasselblad H6D-100cMS", hasselblad_h6d_100cms_iso_64_jpeg_fff, "raw_modes/Hasselblad H6D-100cMS_ISO_64_JPEG.FFF");
-  }
-  mod hasselblad_x1d_raw_modes {
-    super::super::rawdb_test_file!("Hasselblad", "Hasselblad X1D", hasselblad_x1d_iso_1600_uncompressed_3fr, "raw_modes/Hasselblad X1D_ISO_1600_Uncompressed.3FR");
-  }
-  mod hasselblad_x2d_100c_raw_modes {
-    super::super::rawdb_test_file!("Hasselblad", "Hasselblad X2D 100C", x2d_100c_iso_64_3fr, "raw_modes/X2D 100C_ISO_64.3FR");
+  mod x1d_raw_modes {
+    super::super::rawdb_test_file!("Hasselblad", "X1D", hasselblad_x1d_iso_1600_uncompressed_3fr, "raw_modes/Hasselblad X1D_ISO_1600_Uncompressed.3FR");
   }
   mod x1d_ii_50c_raw_modes {
     super::super::rawdb_test_file!("Hasselblad", "X1D II 50C", x1d_ii_50c_iso_100_uncompressed_3fr, "raw_modes/X1D II 50C_ISO_100_Uncompressed.3FR");
+  }
+  mod x2d_100c_raw_modes {
+    super::super::rawdb_test_file!("Hasselblad", "X2D 100C", x2d_100c_iso_64_3fr, "raw_modes/X2D 100C_ISO_64.3FR");
   }
 }
 
@@ -1217,8 +1217,8 @@ mod kodak {
   mod easyshare_z990_raw_modes {
     super::super::rawdb_test_file!("Kodak", "EasyShare Z990", kodak_easyshare_z990_digital_camera_iso_125_kdc, "raw_modes/KODAK EasyShare Z990 Digital Camera_ISO_125.KDC");
   }
-  mod kodak_p712_zoom_digital_camera_raw_modes {
-    super::super::rawdb_test_file!("Kodak", "KODAK P712 ZOOM DIGITAL CAMERA", kodak_p712_zoom_digital_camera_iso_64_jpeg_kdc, "raw_modes/KODAK P712 ZOOM DIGITAL CAMERA_ISO_64_JPEG.KDC");
+  mod p712_raw_modes {
+    super::super::rawdb_test_file!("Kodak", "P712", kodak_p712_zoom_digital_camera_iso_64_jpeg_kdc, "raw_modes/KODAK P712 ZOOM DIGITAL CAMERA_ISO_64_JPEG.KDC");
   }
   mod p880_raw_modes {
     super::super::rawdb_test_file!("Kodak", "P880", kodak_p880_zoom_digital_camera_iso_50_jpeg_kdc, "raw_modes/KODAK P880 ZOOM DIGITAL CAMERA_ISO_50_JPEG.KDC");
@@ -1424,6 +1424,12 @@ mod nikon {
   }
   mod coolpix_p1000_raw_modes {
     super::super::rawdb_test_file!("Nikon", "COOLPIX P1000", coolpix_p1000_iso_100_12bits_uncompressed_nrw, "raw_modes/COOLPIX P1000_ISO_100_12bits_Uncompressed.NRW");
+  }
+  mod coolscan_iv_ed_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "COOLSCAN IV ED", nef_from_nikon_scan_4_0_3_at_600dpi_nef, "raw_modes/NEF_from_Nikon_Scan_4.0.3_at_600dpi.nef");
+  }
+  mod coolscan_v_ed_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "COOLSCAN V ED", coolscan_v_ed_600px_nef, "raw_modes/Coolscan_V_ED_600px.nef");
   }
   mod coolpix_a_raw_modes {
     super::super::rawdb_test_file!("Nikon", "Coolpix A", coolpix_a_iso_100_14bits_lossy_type_2_nef, "raw_modes/COOLPIX A_ISO_100_14bits_Lossy (type 2).NEF");
@@ -1729,49 +1735,8 @@ mod nikon {
   mod e8400_raw_modes {
     super::super::rawdb_test_file!("Nikon", "E8400", e8400_iso_100_12bits_uncompressed_nef, "raw_modes/E8400_ISO_100_12bits_Uncompressed.NEF");
   }
-  mod nikon_z_6_2_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_2", nikon_z_6_2_large_iso_100_12bits_lossless_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_12bits_Lossless.NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_2", nikon_z_6_2_large_iso_100_12bits_lossy_type_2_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_12bits_Lossy (type 2).NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_2", nikon_z_6_2_large_iso_100_12bits_uncompressed_reduced_to_12_bit_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_12bits_Uncompressed (reduced to 12 bit).NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_2", nikon_z_6_2_large_iso_100_14bits_lossless_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_14bits_Lossless.NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_2", nikon_z_6_2_large_iso_100_14bits_lossy_type_2_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_14bits_Lossy (type 2).NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_2", nikon_z_6_2_large_iso_100_14bits_packed_14_bits_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_14bits_Packed 14 bits.NEF");
-  }
-  mod nikon_z_6_3_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_3", nikon_z6_3_lossless_compressed_16_9_nef, "raw_modes/Nikon_Z6_3_Lossless_compressed_16_9.NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_3", nikon_z6_3_lossless_compressed_1_1_nef, "raw_modes/Nikon_Z6_3_Lossless_compressed_1_1.NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_3", nikon_z6_3_lossless_compressed_dx_nef, "raw_modes/Nikon_Z6_3_Lossless_compressed_DX.NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 6_3", nikon_z6_3_lossless_compressed_fx_nef, "raw_modes/Nikon_Z6_3_Lossless_compressed_FX.NEF");
-  }
-  mod nikon_z_7_2_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 7_2", nikon_z_7_2_large_iso_100_12bits_lossless_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_12bits_Lossless.NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 7_2", nikon_z_7_2_large_iso_100_12bits_lossy_type_2_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_12bits_Lossy (type 2).NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 7_2", nikon_z_7_2_large_iso_100_12bits_uncompressed_reduced_to_12_bit_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_12bits_Uncompressed (reduced to 12 bit).NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 7_2", nikon_z_7_2_large_iso_100_14bits_lossless_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_14bits_Lossless.NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 7_2", nikon_z_7_2_large_iso_100_14bits_lossy_type_2_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_14bits_Lossy (type 2).NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 7_2", nikon_z_7_2_large_iso_100_14bits_packed_14_bits_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_14bits_Packed 14 bits.NEF");
-  }
-  mod nikon_z_8_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 8", nikon_z8_raw_14_bit_lossless_compression_nef, "raw_modes/Nikon_Z8_raw_14_bit_lossless_compression.NEF");
-  }
-  mod nikon_z_9_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "NIKON Z 9", nikon_z_9_large_iso_64_14bits_lossless_nef, "raw_modes/NIKON Z 9_Large_ISO_64_14bits_Lossless.NEF");
-  }
-  mod nikon_z_f_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "NIKON Z f", nikon_z_f_iso_160_14bits_lossless_nrw, "raw_modes/NIKON Z f_ISO_160_14bits_Lossless.NRW");
-  }
-  mod nikon_z_fc_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "NIKON Z fc", nikon_z_fc_large_iso_200_14bits_lossless_nef, "raw_modes/NIKON Z fc_Large_ISO_200_14bits_Lossless.NEF");
-    super::super::rawdb_test_file!("Nikon", "NIKON Z fc", nikon_z_fc_large_iso_400_12bits_lossless_nef, "raw_modes/NIKON Z fc_Large_ISO_400_12bits_Lossless.NEF");
-  }
-  mod nikon_coolscan_5000_ed_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "Nikon COOLSCAN 5000 ED", nikon_super_coolscan_5000_ed_nef, "raw_modes/nikon-super-coolscan-5000-ed.nef");
-  }
-  mod nikon_coolscan_iv_ed_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "Nikon COOLSCAN IV ED", nef_from_nikon_scan_4_0_3_at_600dpi_nef, "raw_modes/NEF_from_Nikon_Scan_4.0.3_at_600dpi.nef");
-  }
-  mod nikon_coolscan_v_ed_raw_modes {
-    super::super::rawdb_test_file!("Nikon", "Nikon COOLSCAN V ED", coolscan_v_ed_600px_nef, "raw_modes/Coolscan_V_ED_600px.nef");
+  mod super_coolscan_5000_ed_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Super COOLSCAN 5000 ED", nikon_super_coolscan_5000_ed_nef, "raw_modes/nikon-super-coolscan-5000-ed.nef");
   }
   mod z_30_raw_modes {
     super::super::rawdb_test_file!("Nikon", "Z 30", nikon_z30_lossless_12bit_nef, "raw_modes/Nikon_Z30_Lossless_12bit.NEF");
@@ -1807,6 +1772,20 @@ mod nikon {
     super::super::rawdb_test_file!("Nikon", "Z 6", nikon_z_6_medium_iso_100_12bits_lossless_nef, "raw_modes/NIKON Z 6_Medium_ISO_100_12bits_Lossless.NEF");
     super::super::rawdb_test_file!("Nikon", "Z 6", nikon_z_6_small_iso_100_12bits_lossless_nef, "raw_modes/NIKON Z 6_Small_ISO_100_12bits_Lossless.NEF");
   }
+  mod z_6_ii_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Z 6 II", nikon_z_6_2_large_iso_100_12bits_lossless_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_12bits_Lossless.NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 6 II", nikon_z_6_2_large_iso_100_12bits_lossy_type_2_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_12bits_Lossy (type 2).NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 6 II", nikon_z_6_2_large_iso_100_12bits_uncompressed_reduced_to_12_bit_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_12bits_Uncompressed (reduced to 12 bit).NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 6 II", nikon_z_6_2_large_iso_100_14bits_lossless_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_14bits_Lossless.NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 6 II", nikon_z_6_2_large_iso_100_14bits_lossy_type_2_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_14bits_Lossy (type 2).NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 6 II", nikon_z_6_2_large_iso_100_14bits_packed_14_bits_nef, "raw_modes/NIKON Z 6_2_Large_ISO_100_14bits_Packed 14 bits.NEF");
+  }
+  mod z_6_iii_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Z 6 III", nikon_z6_3_lossless_compressed_16_9_nef, "raw_modes/Nikon_Z6_3_Lossless_compressed_16_9.NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 6 III", nikon_z6_3_lossless_compressed_1_1_nef, "raw_modes/Nikon_Z6_3_Lossless_compressed_1_1.NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 6 III", nikon_z6_3_lossless_compressed_dx_nef, "raw_modes/Nikon_Z6_3_Lossless_compressed_DX.NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 6 III", nikon_z6_3_lossless_compressed_fx_nef, "raw_modes/Nikon_Z6_3_Lossless_compressed_FX.NEF");
+  }
   mod z_7_raw_modes {
     super::super::rawdb_test_file!("Nikon", "Z 7", nikon_z_7_large_iso_64_12bits_lossless_nef, "raw_modes/NIKON Z 7_Large_ISO_64_12bits_Lossless.NEF");
     super::super::rawdb_test_file!("Nikon", "Z 7", nikon_z_7_large_iso_64_12bits_lossy_type_2_nef, "raw_modes/NIKON Z 7_Large_ISO_64_12bits_Lossy (type 2).NEF");
@@ -1816,6 +1795,27 @@ mod nikon {
     super::super::rawdb_test_file!("Nikon", "Z 7", nikon_z_7_large_iso_64_14bits_packed_14_bits_nef, "raw_modes/NIKON Z 7_Large_ISO_64_14bits_Packed 14 bits.NEF");
     super::super::rawdb_test_file!("Nikon", "Z 7", nikon_z_7_medium_iso_64_12bits_lossless_nef, "raw_modes/NIKON Z 7_Medium_ISO_64_12bits_Lossless.NEF");
     super::super::rawdb_test_file!("Nikon", "Z 7", nikon_z_7_small_iso_64_12bits_lossless_nef, "raw_modes/NIKON Z 7_Small_ISO_64_12bits_Lossless.NEF");
+  }
+  mod z_7_ii_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Z 7 II", nikon_z_7_2_large_iso_100_12bits_lossless_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_12bits_Lossless.NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 7 II", nikon_z_7_2_large_iso_100_12bits_lossy_type_2_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_12bits_Lossy (type 2).NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 7 II", nikon_z_7_2_large_iso_100_12bits_uncompressed_reduced_to_12_bit_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_12bits_Uncompressed (reduced to 12 bit).NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 7 II", nikon_z_7_2_large_iso_100_14bits_lossless_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_14bits_Lossless.NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 7 II", nikon_z_7_2_large_iso_100_14bits_lossy_type_2_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_14bits_Lossy (type 2).NEF");
+    super::super::rawdb_test_file!("Nikon", "Z 7 II", nikon_z_7_2_large_iso_100_14bits_packed_14_bits_nef, "raw_modes/NIKON Z 7_2_Large_ISO_100_14bits_Packed 14 bits.NEF");
+  }
+  mod z_8_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Z 8", nikon_z8_raw_14_bit_lossless_compression_nef, "raw_modes/Nikon_Z8_raw_14_bit_lossless_compression.NEF");
+  }
+  mod z_9_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Z 9", nikon_z_9_large_iso_64_14bits_lossless_nef, "raw_modes/NIKON Z 9_Large_ISO_64_14bits_Lossless.NEF");
+  }
+  mod z_f_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Z f", nikon_z_f_iso_160_14bits_lossless_nrw, "raw_modes/NIKON Z f_ISO_160_14bits_Lossless.NRW");
+  }
+  mod z_fc_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "Z fc", nikon_z_fc_large_iso_200_14bits_lossless_nef, "raw_modes/NIKON Z fc_Large_ISO_200_14bits_Lossless.NEF");
+    super::super::rawdb_test_file!("Nikon", "Z fc", nikon_z_fc_large_iso_400_12bits_lossless_nef, "raw_modes/NIKON Z fc_Large_ISO_400_12bits_Lossless.NEF");
   }
   mod zr_raw_modes {
     super::super::rawdb_test_file!("Nikon", "ZR", nikon_zr_dx_l_nef, "raw_modes/Nikon_ZR_DX_L.NEF");

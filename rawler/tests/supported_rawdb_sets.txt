@@ -304,22 +304,22 @@ Nikon/D800/raw_modes
 Nikon/D3100/raw_modes
 Nikon/Z 5/raw_modes
 Nikon/Z 5 II/raw_modes
-Nikon/NIKON Z 6_2/raw_modes
-Nikon/NIKON Z 6_3/raw_modes
-Nikon/NIKON Z 7_2/raw_modes
+Nikon/Z 6 II/raw_modes
+Nikon/Z 6 III/raw_modes
+Nikon/Z 7 II/raw_modes
 Nikon/Z 30/raw_modes
 Nikon/Z 50/raw_modes
 Nikon/Z 50 II/raw_modes
 Nikon/Z 6/raw_modes
-Nikon/NIKON Z f/raw_modes
-Nikon/NIKON Z fc/raw_modes
+Nikon/Z f/raw_modes
+Nikon/Z fc/raw_modes
 Nikon/Z 7/raw_modes
-Nikon/NIKON Z 9/raw_modes
-Nikon/NIKON Z 8/raw_modes
+Nikon/Z 9/raw_modes
+Nikon/Z 8/raw_modes
 Nikon/ZR/raw_modes
-Nikon/Nikon COOLSCAN 5000 ED/raw_modes
-Nikon/Nikon COOLSCAN IV ED/raw_modes
-Nikon/Nikon COOLSCAN V ED/raw_modes
+Nikon/Super COOLSCAN 5000 ED/raw_modes
+Nikon/COOLSCAN IV ED/raw_modes
+Nikon/COOLSCAN V ED/raw_modes
 Nikon/1 J4/raw_modes
 Sony/DSC-F828/raw_modes
 Sony/DSC-HX95/raw_modes
@@ -463,11 +463,11 @@ Hasselblad/H3D/raw_modes
 Hasselblad/H4D-50/raw_modes
 Hasselblad/H5D-40/raw_modes
 Hasselblad/H5D-50c/raw_modes
-Hasselblad/Hasselblad H4D-40/raw_modes
-Hasselblad/Hasselblad H4D/raw_modes
-Hasselblad/Hasselblad H6D-100cMS/raw_modes
-Hasselblad/Hasselblad X1D/raw_modes
-Hasselblad/Hasselblad X2D 100C/raw_modes
+Hasselblad/H4D-40/raw_modes
+Hasselblad/H4D/raw_modes
+Hasselblad/H6D-100cMS/raw_modes
+Hasselblad/X1D/raw_modes
+Hasselblad/X2D 100C/raw_modes
 Hasselblad/X1D II 50C/raw_modes
 Samsung/EX1/raw_modes
 Samsung/GX-1L/raw_modes
@@ -506,7 +506,7 @@ Kodak/EasyShare Z981/raw_modes
 Kodak/EasyShare Z990/raw_modes
 Kodak/EOS DCS 1/raw_modes
 Kodak/EOS DCS 3/raw_modes
-Kodak/KODAK P712 ZOOM DIGITAL CAMERA/raw_modes
+Kodak/P712/raw_modes
 Kodak/P880/raw_modes
 Kodak/Z1015 IS/raw_modes
 Olympus/C5050Z/raw_modes
