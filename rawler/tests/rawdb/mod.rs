@@ -421,6 +421,14 @@ mod canon {
     super::super::rawdb_test_file!("Canon", "EOS RP", canon_eos_rp_raw_iso_100_crop_nodual_cr3, "raw_modes/Canon EOS RP_RAW_ISO_100_crop_nodual.CR3");
     super::super::rawdb_test_file!("Canon", "EOS RP", canon_eos_rp_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon EOS RP_RAW_ISO_100_nocrop_nodual.CR3");
   }
+  mod eos_ra_raw_modes {
+    super::super::rawdb_test_file!("Canon", "EOS Ra", canon_eos_ra_craw_iso_100_cr3, "raw_modes/Canon EOS Ra_CRAW_ISO_100.CR3");
+    super::super::rawdb_test_file!("Canon", "EOS Ra", canon_eos_ra_craw_iso_51200_cr3, "raw_modes/Canon EOS Ra_CRAW_ISO_51200.CR3");
+    super::super::rawdb_test_file!("Canon", "EOS Ra", canon_eos_ra_craw_iso_800_cr3, "raw_modes/Canon EOS Ra_CRAW_ISO_800.CR3");
+    super::super::rawdb_test_file!("Canon", "EOS Ra", canon_eos_ra_raw_iso_100_cr3, "raw_modes/Canon EOS Ra_RAW_ISO_100.CR3");
+    super::super::rawdb_test_file!("Canon", "EOS Ra", canon_eos_ra_raw_iso_51200_cr3, "raw_modes/Canon EOS Ra_RAW_ISO_51200.CR3");
+    super::super::rawdb_test_file!("Canon", "EOS Ra", canon_eos_ra_raw_iso_800_cr3, "raw_modes/Canon EOS Ra_RAW_ISO_800.CR3");
+  }
   mod eos_rebel_sl1_raw_modes {
     super::super::rawdb_test_file!("Canon", "EOS Rebel SL1", canon_eos_rebel_sl1_iso_400_raw_cr2, "raw_modes/Canon EOS REBEL SL1_ISO_400_RAW.CR2");
   }
