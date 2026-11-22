@@ -1391,6 +1391,9 @@ mod nikon {
   mod sample_1_j5_raw_modes {
     super::super::rawdb_test_file!("Nikon", "1 J5", nikon_1_j5_iso_6400_12bits_lossy_type_2_nef, "raw_modes/NIKON 1 J5_ISO_6400_12bits_Lossy (type 2).NEF");
   }
+  mod sample_1_s1_raw_modes {
+    super::super::rawdb_test_file!("Nikon", "1 S1", sample_1_s1_200_12bits_lossy_type_2_nef, "raw_modes/1 S1_200_12bits__Lossy (type 2).NEF");
+  }
   mod sample_1_s2_raw_modes {
     super::super::rawdb_test_file!("Nikon", "1 S2", nikon_1_s2_iso_720_12bits_lossy_type_2_nef, "raw_modes/NIKON 1 S2_ISO_720_12bits_Lossy (type 2).NEF");
   }
