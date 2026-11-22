@@ -448,6 +448,7 @@ Minolta/ALPHA-7 DIGITAL/raw_modes
 Minolta/DiMAGE 7Hi/raw_modes
 Minolta/DiMAGE 7i/raw_modes
 Minolta/DiMAGE 7/raw_modes
+Minolta/DiMAGE 5/raw_modes
 Minolta/DiMAGE A1/raw_modes
 Minolta/DiMAGE A200/raw_modes
 Minolta/DiMAGE A2/raw_modes

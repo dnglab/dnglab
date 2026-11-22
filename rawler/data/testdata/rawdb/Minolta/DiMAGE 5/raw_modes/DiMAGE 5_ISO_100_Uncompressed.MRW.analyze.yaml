@@ -1,0 +1,91 @@
+---
+file:
+  fileSize: 6422144
+  fileName: DiMAGE 5_ISO_100_Uncompressed.MRW
+  digest: cc1880d4f5dd06afc3e52a39be244231
+data:
+  metadata:
+    rawParams:
+      rawWidth: 2056
+      rawHeight: 1544
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 2048
+          h: 1536
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 2056
+          h: 1544
+      blacklevels:
+        levels:
+          - 0/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 3965
+      wbCoeffs:
+        - 1.9804688
+        - 1.0
+        - 1.2617188
+        - ~
+    rawMetadata:
+      exif:
+        orientation: ~
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: ~
+        fnumber: ~
+        aperture_value: ~
+        brightness_value: ~
+        iso_speed_ratings: ~
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: ~
+        date_time_original: ~
+        create_date: ~
+        modify_date: "2025:01:04 10:23:44"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: DiMAGE 5
+      make: Minolta
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
