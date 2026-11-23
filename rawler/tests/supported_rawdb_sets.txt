@@ -701,6 +701,7 @@ Leica/Digilux 3/raw_modes
 Leica/D-LUX 3/raw_modes
 Leica/D-LUX 4/raw_modes
 Leica/D-LUX 5/raw_modes
+Leica/D-LUX 6/raw_modes
 Leica/D-LUX 7/raw_modes
 Leica/D-LUX Typ 109/raw_modes
 Leica/V-LUX 1/raw_modes
