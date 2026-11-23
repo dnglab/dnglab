@@ -392,23 +392,26 @@ def process_job(
 def plan_jobs(
     catalogue: dict[tuple[str, str], dict[str, list[dict]]],
     set_lines: Iterable[SetLine],
-) -> list[FileJob]:
+) -> tuple[list[FileJob], list[str]]:
+    """The file jobs of the requested sets, and the requested sets and
+       subfolders that the catalogue lacks."""
     # Group requested subfolders per (maker, model).
     wanted: dict[tuple[str, str], set[str]] = {}
     for entry in set_lines:
         wanted.setdefault((entry.maker, entry.model), set()).add(entry.subfolder)
 
     jobs: list[FileJob] = []
+    missing: list[str] = []
     seen: set[tuple[str, str, str]] = set()
     for (maker, model), subfolders in sorted(wanted.items()):
         categories = catalogue.get((maker, model))
         if categories is None:
-            log(f"warn: set not in catalogue: {maker}/{model}")
+            missing.append(f"set not in catalogue: {maker}/{model}")
             continue
         for sub in sorted(subfolders):
             envelopes = categories.get(sub)
             if not envelopes:
-                log(f"warn: subfolder {sub!r} absent for {maker}/{model}")
+                missing.append(f"subfolder {sub!r} absent for {maker}/{model}")
                 continue
             for env in envelopes:
                 rel = env["path"]
@@ -420,7 +423,7 @@ def plan_jobs(
                     maker=maker, model=model, subfolder=sub,
                     rel_path=rel, expected_size=int(env["size"]),
                 ))
-    return jobs
+    return jobs, missing
 
 
 # ---------------------------------------------------------------- output
@@ -569,7 +572,14 @@ def main(argv: list[str] | None = None) -> int:
         catalogue = build_catalogue_from_per_set(session, args.base_url, pairs, args.verbose)
         log(f"loaded catalogue from /api/sets ({len(catalogue)} sets)")
 
-    jobs = plan_jobs(catalogue, set_lines)
+    jobs, missing = plan_jobs(catalogue, set_lines)
+    if missing:
+        # mod.rs would silently lose the tests of these sets.
+        log(f"error: {len(missing)} entry(s) of {args.sets} not on the server; mod.rs not written")
+        for msg in missing:
+            log(f"  - {msg}")
+        log("  fix the set lines, or the sets in rawdb, and run again")
+        return 1
     log(f"planned {len(jobs)} file jobs")
 
     if args.dry_run:
