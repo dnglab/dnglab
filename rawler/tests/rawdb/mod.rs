@@ -1264,6 +1264,9 @@ mod leica {
     super::super::rawdb_test_file!("Leica", "D-LUX 5", d_lux_5_iso_80_4fmt_3x2_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_3x2.RWL");
     super::super::rawdb_test_file!("Leica", "D-LUX 5", d_lux_5_iso_80_4fmt_4x3_rwl, "raw_modes/D-LUX 5_ISO_80_4fmt_4x3.RWL");
   }
+  mod d_lux_6_raw_modes {
+    super::super::rawdb_test_file!("Leica", "D-LUX 6", d_lux_6_iso_250_4fmt_16x9_rwl, "raw_modes/D-LUX 6_ISO_250_4fmt_16x9.RWL");
+  }
   mod d_lux_7_raw_modes {
     super::super::rawdb_test_file!("Leica", "D-LUX 7", d_lux_7_iso_200_4fmt_4x3_rwl, "raw_modes/D-Lux 7_ISO_200_4fmt_4x3.RWL");
   }
