@@ -702,6 +702,9 @@ mod canon {
   mod powershot_sx160_is_raw_modes {
     super::super::rawdb_test_file!("Canon", "PowerShot SX160 IS", canon_powershot_sx160_is_crw, "raw_modes/Canon PowerShot SX160 IS.CRW");
   }
+  mod powershot_sx20_is_raw_modes {
+    super::super::rawdb_test_file!("Canon", "PowerShot SX20 IS", powershot_sx20_is_crw, "raw_modes/PowerShot SX20 IS.CRW");
+  }
   mod powershot_sx220_hs_raw_modes {
     super::super::rawdb_test_file!("Canon", "PowerShot SX220 HS", powershot_sx220_hs_crw, "raw_modes/PowerShot SX220 HS.CRW");
   }

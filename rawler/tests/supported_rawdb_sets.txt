@@ -173,6 +173,7 @@ Canon/PowerShot SX160 IS/raw_modes
 Canon/PowerShot SX1 IS/raw_modes
 Canon/PowerShot SX260 HS/raw_modes
 Canon/PowerShot SX220 HS/raw_modes
+Canon/PowerShot SX20 IS/raw_modes
 Canon/PowerShot SX40 HS/raw_modes
 Canon/PowerShot SX50 HS/raw_modes
 Canon/PowerShot SX60 HS/raw_modes
