@@ -2902,6 +2902,9 @@ mod phase_one {
   mod p30_raw_modes {
     super::super::rawdb_test_file!("Phase One", "P30", p30_iiq_l_iso_100_iiq, "raw_modes/P30_IIQ L_ISO_100.IIQ");
   }
+  mod p40plus_raw_modes {
+    super::super::rawdb_test_file!("Phase One", "P40+", p40plus_l_iiq, "raw_modes/P40plus_L.IIQ");
+  }
   mod p45plus_raw_modes {
     super::super::rawdb_test_file!("Phase One", "P45+", p45_l_4x3_iiq, "raw_modes/P45+_L_4x3.IIQ");
     super::super::rawdb_test_file!("Phase One", "P45+", p45_s_4x3_iiq, "raw_modes/P45+_S_4x3.IIQ");

@@ -229,6 +229,7 @@ Phase One/P20/raw_modes
 Phase One/P25/raw_modes
 Phase One/P25+/raw_modes
 Phase One/P45+/raw_modes
+Phase One/P40+/raw_modes
 Nikon/D3500/raw_modes
 Nikon/1 V2/raw_modes
 Nikon/D40X/raw_modes
