@@ -175,6 +175,7 @@ Canon/PowerShot SX40 HS/raw_modes
 Canon/PowerShot SX50 HS/raw_modes
 Canon/PowerShot SX60 HS/raw_modes
 Canon/PowerShot SX70 HS/raw_modes
+Canon/PowerShot SX710 HS/raw_modes
 Canon/PowerShot SX150 IS/raw_modes
 Canon/PowerShot V1/raw_modes
 Canon/EOS Ra/raw_modes
