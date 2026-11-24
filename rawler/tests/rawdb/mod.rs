@@ -719,6 +719,9 @@ mod canon {
     super::super::rawdb_test_file!("Canon", "PowerShot SX70 HS", canon_powershot_sx70_hs_craw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon PowerShot SX70 HS_CRAW_ISO_100_nocrop_nodual.CR3");
     super::super::rawdb_test_file!("Canon", "PowerShot SX70 HS", canon_powershot_sx70_hs_raw_iso_100_nocrop_nodual_cr3, "raw_modes/Canon PowerShot SX70 HS_RAW_ISO_100_nocrop_nodual.CR3");
   }
+  mod powershot_sx710_hs_raw_modes {
+    super::super::rawdb_test_file!("Canon", "PowerShot SX710 HS", powershot_sx710_hs_crw, "raw_modes/PowerShot SX710 HS.CRW");
+  }
   mod powershot_v1_raw_modes {
     super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_burst_raw_01_cr3, "raw_modes/CANON_V1_ISO_100_BURST_RAW_01.CR3");
     super::super::rawdb_test_file!("Canon", "PowerShot V1", canon_v1_iso_100_burst_raw_02_cr3, "raw_modes/CANON_V1_ISO_100_BURST_RAW_02.CR3");
