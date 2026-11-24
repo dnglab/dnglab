@@ -743,6 +743,12 @@ mod canon {
   }
 }
 
+mod dji {
+  mod fc6310_raw_modes {
+    super::super::rawdb_test_file!("DJI", "FC6310", dji_fc6310_3x2_16bit_dng, "raw_modes/DJI_FC6310_3x2_16bit.dng");
+  }
+}
+
 mod dnglab {
   mod dng_compression_variants_variants {
     super::super::rawdb_test_file!("dnglab", "dng-compression-variants", sample_10bit_dng, "variants/10bit.dng");

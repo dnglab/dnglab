@@ -1,0 +1,140 @@
+---
+file:
+  fileSize: 40196555
+  fileName: DJI_FC6310_3x2_16bit.dng
+  digest: 7005051a415f549aa22a418672b26023
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5472
+      rawHeight: 3648
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 5464
+          h: 3640
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 5472
+          h: 3648
+      blacklevels:
+        levels:
+          - 3198/1
+          - 3193/1
+          - 3193/1
+          - 3198/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 2.1513705
+        - 1.0
+        - 2.067628
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 240000/10000
+          - 240000/10000
+          - 0/0
+          - 0/0
+        exposure_time: 10000/1000000
+        fnumber: 400/100
+        aperture_value: 400/100
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/32
+        date_time_original: "2017:12:27 14:32:13"
+        create_date: "2017:12:27 14:32:13"
+        modify_date: "2017:12:27 14:32:13"
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: "-6643/-1000"
+        max_aperture_value: 297/100
+        subject_distance: 0/100
+        metering_mode: 2
+        light_source: 0
+        flash: 32
+        focal_length: 880/100
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: 0
+        owner_name: ~
+        serial_number: 1ad729df81ed5ea4441e8bfeca2c1fbe
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: N
+          gps_latitude:
+            - 49/1
+            - 30/1
+            - 51960/10000
+          gps_longitude_ref: E
+          gps_longitude:
+            - 14/1
+            - 46/1
+            - 224184/10000
+          gps_altitude_ref: 0
+          gps_altitude: 862319/1000
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: ~
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: ~
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: FC6310
+      make: DJI
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
