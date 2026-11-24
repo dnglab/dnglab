@@ -1,0 +1,10 @@
+make = "Sinar AG"
+model = "Sinarback eVolution 75"
+clean_make = "Sinar"
+clean_model = "eVolution 75"
+whitepoint = 16383
+color_pattern = "GRBG"
+
+[cameras.color_matrix]
+# Generic matrix for Sinar backs, not measured for this back
+D65 = [1.6442, -0.2956, -0.2422, -0.2877, 1.2128, 0.0750, -0.1136, 0.6066, 0.4559]

@@ -1,0 +1,79 @@
+---
+file:
+  fileSize: 71632961
+  fileName: Sinarback eVolution 75_4x3_16bit.sti
+  digest: 4110486cc1672f29aad1b8da3b00000c
+data:
+  metadata:
+    rawParams:
+      rawWidth: 4992
+      rawHeight: 6668
+      bitDepth: 16
+      cropArea: ~
+      activeArea: ~
+      blacklevels:
+        levels:
+          - 50/1
+        cpp: 1
+        width: 1
+        height: 1
+      whitelevels:
+        - 16383
+      wbCoeffs:
+        - 1.354516
+        - 1.0
+        - 1.242928
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 3
+        copyright: ~
+        artist: tk77068
+        lens_spec: ~
+        exposure_time: 2520000/1000000
+        fnumber: ~
+        aperture_value: 0/10000
+        brightness_value: ~
+        iso_speed_ratings: 100
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/10000
+        date_time_original: "2009:10:03 14:42:33"
+        create_date: ~
+        modify_date: "2009:10:03 14:52:58"
+        exposure_program: ~
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: ~
+        max_aperture_value: 0/10000
+        subject_distance: ~
+        metering_mode: ~
+        light_source: ~
+        flash: ~
+        focal_length: ~
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: ~
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: eVolution 75
+      make: Sinar
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

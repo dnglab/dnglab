@@ -842,3 +842,4 @@ Parrot/Bebop Drone/raw_modes
 Parrot/Bebop 2/raw_modes
 Parrot/Anafi/raw_modes
 dnglab/dng-compression-variants/variants
+Sinar/Sinarback eVolution 75/raw_modes
