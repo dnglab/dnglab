@@ -80,6 +80,14 @@ impl<'a> Decompressor<'a, u16> for PackedDecompressor {
   fn can_skip_rows(&self) -> bool {
     true
   }
+
+  /// The lines are packed without padding, like the unpackers read them
+  fn data_size(&self, rows: usize, line_width: usize) -> Option<usize> {
+    rows
+      .checked_mul(line_width)?
+      .checked_mul(self.bps as usize)
+      .map(|bits| bits.div_ceil(u8::BITS as usize))
+  }
 }
 
 #[multiversion(targets("x86_64+avx+avx2", "x86+sse", "aarch64+neon"))]
@@ -1437,6 +1445,11 @@ impl<'a> Decompressor<'a, f32> for PackedIntDecompressor {
 
   fn can_skip_rows(&self) -> bool {
     true
+  }
+
+  /// Each row starts on a byte boundary
+  fn data_size(&self, rows: usize, line_width: usize) -> Option<usize> {
+    line_width.checked_mul(self.bps as usize)?.div_ceil(u8::BITS as usize).checked_mul(rows)
   }
 }
 

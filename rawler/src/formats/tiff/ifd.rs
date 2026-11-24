@@ -474,23 +474,50 @@ impl IFD {
   /// If there exists a single strip only or if all strips are continous,
   /// the second return value contains the whole strip data in a single slice.
   pub fn strip_data<'a>(&self, rawsource: &'a RawSource) -> Result<(Vec<&'a [u8]>, Option<&'a [u8]>)> {
+    self.strip_data_with_size(rawsource, |_| None)
+  }
+
+  /// Byte slices of the strips like [`Self::strip_data`]. `size(strip)` is the
+  /// number of bytes the data of strip `strip` has if its size is fixed, like
+  /// for uncompressed data. A strip with a smaller StripByteCounts value is
+  /// read with that size if the file has the bytes: the Hasselblad L2D-20c
+  /// counts the bytes of the columns of the ActiveArea only.
+  pub fn strip_data_with_size<'a>(&self, rawsource: &'a RawSource, size: impl Fn(usize) -> Option<u64>) -> Result<(Vec<&'a [u8]>, Option<&'a [u8]>)> {
     if !self.has_entry(TiffCommonTag::StripOffsets) {
       return Err(TiffError::General("IFD contains no strip data".into()));
     }
     let offsets = self.offset_values(TiffCommonTag::StripOffsets)?;
-    let sizes = self.offset_values(TiffCommonTag::StripByteCounts)?;
+    let byte_counts = self.offset_values(TiffCommonTag::StripByteCounts)?;
 
-    if offsets.len() != sizes.len() {
+    if offsets.len() != byte_counts.len() {
       return Err(TiffError::General(format!(
         "Can't get data from strips: offsets has len {} but sizes has len {}",
         offsets.len(),
-        sizes.len()
+        byte_counts.len()
       )));
     }
 
     let Some(&first) = offsets.first() else {
       return Err(TiffError::General("IFD contains no strip data".into()));
     };
+
+    let sizes: Vec<u64> = offsets
+      .iter()
+      .zip(byte_counts.iter())
+      .enumerate()
+      .map(|(strip, (&offset, &count))| match size(strip) {
+        Some(needed) if needed > u64::from(count) && rawsource.subview(self.base as u64 + u64::from(offset), needed).is_ok() => {
+          log::warn!(
+            "TIFF: strip {} has a StripByteCounts value of {} bytes, but its data has {} bytes, reading them",
+            strip,
+            count,
+            needed
+          );
+          needed
+        }
+        _ => u64::from(count),
+      })
+      .collect();
 
     // Check if all slices are continous
     let mut end_off = first as u64;
@@ -500,12 +527,12 @@ impl IFD {
         is_continous = false;
         break;
       }
-      end_off += *size as u64;
+      end_off += *size;
     }
 
     let mut subviews = Vec::with_capacity(offsets.len());
     for (offset, size) in offsets.iter().zip(sizes.iter()) {
-      subviews.push(rawsource.subview(self.base as u64 + *offset as u64, *size as u64)?);
+      subviews.push(rawsource.subview(self.base as u64 + *offset as u64, *size)?);
     }
 
     let continous = if is_continous {

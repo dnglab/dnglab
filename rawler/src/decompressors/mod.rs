@@ -122,6 +122,13 @@ where
   /// bitstream, is unable to skip the previous rows as the compressed row length
   /// vary because of entropy coding.
   fn can_skip_rows(&self) -> bool;
+
+  /// Bytes of `rows` lines of `line_width` samples if the data has a fixed
+  /// size, like packed uncompressed data. `None` for data whose size depends
+  /// on its content, like compressed data, or a size that overflows.
+  fn data_size(&self, _rows: usize, _line_width: usize) -> Option<usize> {
+    None
+  }
 }
 
 /// Decompresses a full image by calling a closure once per row in parallel.

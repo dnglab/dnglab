@@ -913,7 +913,9 @@ pub(crate) fn tag_data(value: &Value, len: usize) -> Result<&[u8]> {
 ///
 /// Reads strip offsets and byte counts from `raw` (TIFF tags `StripOffsets`,
 /// `StripByteCounts`, `RowsPerStrip`, `ImageWidth`, `ImageLength`, and
-/// `SamplesPerPixel`) and decompresses every strip with `dc`.
+/// `SamplesPerPixel`) and decompresses every strip with `dc`. Strips of data
+/// with a fixed size (see [`Decompressor::data_size`]) are read with that size
+/// if their StripByteCounts value is smaller and the file has the bytes.
 ///
 /// # Arguments
 /// * `file` - Source file handle used to read strip data.
@@ -929,7 +931,6 @@ pub(super) fn decode_strips<T>(file: &RawSource, raw: &IFD, dc: impl for<'a> Dec
 where
   T: SubPixel,
 {
-  let (strips, cont) = raw.strip_data(file)?;
   let width = fetch_tiff_tag!(raw, TiffCommonTag::ImageWidth).force_usize(0);
   let height = fetch_tiff_tag!(raw, TiffCommonTag::ImageLength).force_usize(0);
   let cpp = fetch_tiff_tag!(raw, TiffCommonTag::SamplesPerPixel).force_usize(0);
@@ -947,6 +948,11 @@ where
     .checked_mul(cpp)
     .ok_or_else(|| decoder_error!("Image of {} samples per pixel overflows", cpp))?;
   image_bytes("Strips", line_width, height, 32)?;
+  // The last strip has the remaining rows
+  let (strips, cont) = raw.strip_data_with_size(file, |strip| {
+    let rows = rows_per_strip.min(height.saturating_sub(strip.saturating_mul(rows_per_strip)));
+    dc.data_size(rows, line_width).map(|bytes| bytes as u64)
+  })?;
   // If we have a continous buffer, we can optimize decompression of multiple strips.
   if let Some(src) = cont
     && dc.can_skip_rows()
