@@ -2,6 +2,9 @@ make = "FUJIFILM"
 model = "FinePix HS30EXR"
 clean_make = "Fujifilm"
 clean_model = "FinePix HS30EXR"
+model_aliases = [
+  ["FinePix HS33EXR", "FinePix HS33EXR"],
+]
 #blackpoint = 256
 whitepoint = 3900
 color_pattern = "RGGB"
