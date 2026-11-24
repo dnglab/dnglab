@@ -1,0 +1,88 @@
+---
+file:
+  fileSize: 38166407
+  fileName: P40plus_L.IIQ
+  digest: f42fb62dbcde12bdfe04cc1e0d70b2f1
+data:
+  metadata:
+    rawParams:
+      rawWidth: 7372
+      rawHeight: 5536
+      bitDepth: 16
+      cropArea: ~
+      activeArea:
+        p:
+          x: 36
+          y: 6
+        d:
+          w: 7320
+          h: 5484
+      blacklevels:
+        levels:
+          - 0/1
+          - 0/1
+          - 0/1
+          - 0/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 65535
+      wbCoeffs:
+        - 1.2509378
+        - 1.0
+        - 1.7586069
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec: ~
+        exposure_time: 33333/1000000
+        fnumber: 280/100
+        aperture_value: 29709/10000
+        brightness_value: ~
+        iso_speed_ratings: 200
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: ~
+        exposure_bias: 0/1000
+        date_time_original: "2025:05:18 15:59:09"
+        create_date: "2025:05:18 15:59:09"
+        modify_date: ~
+        exposure_program: 3
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 490689/100000
+        max_aperture_value: ~
+        subject_distance: ~
+        metering_mode: ~
+        light_source: 0
+        flash: ~
+        focal_length: 800/10
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: ~
+        white_balance: 0
+        scene_capture_type: ~
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: ~
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps: ~
+        user_comment: ~
+      model: P40+
+      make: Phase One
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+
