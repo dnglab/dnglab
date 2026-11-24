@@ -430,7 +430,12 @@ impl OpcodeList {
   }
 
   /// Parse an opcode list. Opcode lists are always stored in big-endian byte order.
+  /// Data without any bytes is an empty list: DJI drones like the FC6310 write
+  /// an OpcodeList1 tag of 0 bytes instead of a count of 0.
   pub fn parse(data: &[u8]) -> Result<Self> {
+    if data.is_empty() {
+      return Ok(Self::default());
+    }
     let mut reader = ParamReader::new(data);
     let count = reader.u32()?;
     let mut opcodes = Vec::new();
