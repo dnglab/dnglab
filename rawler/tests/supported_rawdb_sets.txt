@@ -473,6 +473,7 @@ Hasselblad/L2D-20c/raw_modes
 Hasselblad/H4D-40/raw_modes
 Hasselblad/H4D/raw_modes
 Hasselblad/H6D-100cMS/raw_modes
+Hasselblad/Lunar/raw_modes
 Hasselblad/X1D/raw_modes
 Hasselblad/X2D 100C/raw_modes
 Hasselblad/X1D II 50C/raw_modes

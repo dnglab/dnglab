@@ -1186,6 +1186,9 @@ mod hasselblad {
   mod l2d_20c_raw_modes {
     super::super::rawdb_test_file!("Hasselblad", "L2D-20c", l2d_20c_4x3_16bit_dng, "raw_modes/L2D-20c_4x3_16bit.dng");
   }
+  mod lunar_raw_modes {
+    super::super::rawdb_test_file!("Hasselblad", "Lunar", lunar_iso_100_12bits_sony_arw_compressed_arw, "raw_modes/Lunar_ISO_100_12bits_Sony ARW Compressed.ARW");
+  }
   mod x1d_raw_modes {
     super::super::rawdb_test_file!("Hasselblad", "X1D", hasselblad_x1d_iso_1600_uncompressed_3fr, "raw_modes/Hasselblad X1D_ISO_1600_Uncompressed.3FR");
   }

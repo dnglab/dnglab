@@ -1238,6 +1238,8 @@ impl RawLoader {
             "Phase One A/S" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
             "Leaf" => return use_decoder!(iiq::IiqDecoder, rawfile, tiff, self),
             "Hasselblad" => return use_decoder!(tfr::TfrDecoder, rawfile, tiff, self),
+            // The Lunar is a Sony NEX-7 sold under the Hasselblad name
+            "HASSELBLAD" => return use_decoder!(arw::ArwDecoder, rawfile, tiff, self),
             "SONY" => return use_decoder!(arw::ArwDecoder, rawfile, tiff, self),
             "Mamiya-OP Co.,Ltd." => return use_decoder!(mef::MefDecoder, rawfile, tiff, self),
             "OLYMPUS IMAGING CORP." => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
