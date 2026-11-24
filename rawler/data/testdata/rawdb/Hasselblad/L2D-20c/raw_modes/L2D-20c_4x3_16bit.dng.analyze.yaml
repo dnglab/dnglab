@@ -1,0 +1,140 @@
+---
+file:
+  fileSize: 43571200
+  fileName: L2D-20c_4x3_16bit.dng
+  digest: 19a95ba984a61bd9bf25d4f76f18c7dd
+data:
+  metadata:
+    rawParams:
+      rawWidth: 5376
+      rawHeight: 3956
+      bitDepth: 16
+      cropArea:
+        p:
+          x: 4
+          y: 4
+        d:
+          w: 5272
+          h: 3948
+      activeArea:
+        p:
+          x: 0
+          y: 0
+        d:
+          w: 5280
+          h: 3956
+      blacklevels:
+        levels:
+          - 4096/1
+          - 4096/1
+          - 4096/1
+          - 4096/1
+        cpp: 1
+        width: 2
+        height: 2
+      whitelevels:
+        - 65472
+      wbCoeffs:
+        - 2.2712402
+        - 1.0
+        - 1.9516602
+        - ~
+    rawMetadata:
+      exif:
+        orientation: 1
+        copyright: ~
+        artist: ~
+        lens_spec:
+          - 24000/1000
+          - 24000/1000
+          - 280/100
+          - 1100/100
+        exposure_time: 1/640
+        fnumber: 280/100
+        aperture_value: 297/100
+        brightness_value: ~
+        iso_speed_ratings: 140
+        iso_speed: ~
+        recommended_exposure_index: ~
+        sensitivity_type: 2
+        exposure_bias: 7/10
+        date_time_original: "2022:01:30 18:03:09"
+        create_date: "2022:01:30 18:03:09"
+        modify_date: "2022:01:30 18:03:09"
+        exposure_program: 2
+        timezone_offset: ~
+        offset_time: ~
+        offset_time_original: ~
+        offset_time_digitized: ~
+        sub_sec_time: ~
+        sub_sec_time_original: ~
+        sub_sec_time_digitized: ~
+        shutter_speed_value: 93219/10000
+        max_aperture_value: 297/100
+        subject_distance: 0/1
+        metering_mode: 1
+        light_source: 1
+        flash: 0
+        focal_length: 12290/1000
+        image_number: ~
+        color_space: ~
+        flash_energy: ~
+        exposure_mode: 0
+        white_balance: 0
+        scene_capture_type: 0
+        subject_distance_range: ~
+        owner_name: ~
+        serial_number: 493OJB88AA00R6
+        lens_serial_number: ~
+        lens_make: ~
+        lens_model: ~
+        gps:
+          gps_version_id:
+            - 2
+            - 3
+            - 0
+            - 0
+          gps_latitude_ref: S
+          gps_latitude:
+            - 33/1
+            - 47/1
+            - 588147/10000
+          gps_longitude_ref: E
+          gps_longitude:
+            - 151/1
+            - 17/1
+            - 478692/10000
+          gps_altitude_ref: 0
+          gps_altitude: 77781/1000
+          gps_timestamp: ~
+          gps_satellites: ~
+          gps_status: V
+          gps_measure_mode: ~
+          gps_dop: ~
+          gps_speed_ref: ~
+          gps_speed: ~
+          gps_track_ref: ~
+          gps_track: ~
+          gps_img_direction_ref: ~
+          gps_img_direction: ~
+          gps_map_datum: WGS-84
+          gps_dest_latitude_ref: ~
+          gps_dest_latitude: ~
+          gps_dest_longitude_ref: ~
+          gps_dest_longitude: ~
+          gps_dest_bearing_ref: ~
+          gps_dest_bearing: ~
+          gps_dest_distance_ref: ~
+          gps_dest_distance: ~
+          gps_processing_method: ~
+          gps_area_information: ~
+          gps_date_stamp: ~
+          gps_differential: ~
+          gps_h_positioning_error: ~
+        user_comment: ~
+      model: L2D-20c
+      make: Hasselblad
+      lens: ~
+      unique_image_id: ~
+      rating: ~
+

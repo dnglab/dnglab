@@ -469,6 +469,7 @@ Hasselblad/H3D/raw_modes
 Hasselblad/H4D-50/raw_modes
 Hasselblad/H5D-40/raw_modes
 Hasselblad/H5D-50c/raw_modes
+Hasselblad/L2D-20c/raw_modes
 Hasselblad/H4D-40/raw_modes
 Hasselblad/H4D/raw_modes
 Hasselblad/H6D-100cMS/raw_modes

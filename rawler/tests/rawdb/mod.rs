@@ -1177,6 +1177,9 @@ mod hasselblad {
   mod h6d_100cms_raw_modes {
     super::super::rawdb_test_file!("Hasselblad", "H6D-100cMS", hasselblad_h6d_100cms_iso_64_jpeg_fff, "raw_modes/Hasselblad H6D-100cMS_ISO_64_JPEG.FFF");
   }
+  mod l2d_20c_raw_modes {
+    super::super::rawdb_test_file!("Hasselblad", "L2D-20c", l2d_20c_4x3_16bit_dng, "raw_modes/L2D-20c_4x3_16bit.dng");
+  }
   mod x1d_raw_modes {
     super::super::rawdb_test_file!("Hasselblad", "X1D", hasselblad_x1d_iso_1600_uncompressed_3fr, "raw_modes/Hasselblad X1D_ISO_1600_Uncompressed.3FR");
   }
