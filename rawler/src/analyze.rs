@@ -10,8 +10,8 @@ use zerocopy::IntoBytes;
 use crate::{
   RawImage, RawImageData, RawlerError, Result,
   decoders::{
-    RawDecodeParams, RawMetadata, cr2::Cr2Format, cr3::Cr3Format, dng::DngFormat, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, tfr::TfrFormat,
-    validate_image_index,
+    RawDecodeParams, RawMetadata, cr2::Cr2Format, cr3::Cr3Format, dng::DngFormat, iiq::IiqFormat, nef::NefFormat, pef::PefFormat, sti::StiFormat,
+    tfr::TfrFormat, validate_image_index,
   },
   formats::tiff::Rational,
   formats::tiff::SRational,
@@ -151,6 +151,7 @@ pub enum FormatDump {
   Pef(PefFormat),
   Iiq(IiqFormat),
   Tfr(TfrFormat),
+  Sti(StiFormat),
   Nef(NefFormat),
   Dng(DngFormat),
 }

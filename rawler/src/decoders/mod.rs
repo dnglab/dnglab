@@ -123,6 +123,7 @@ pub mod qtk;
 pub mod raf;
 pub mod rw2;
 pub mod srw;
+pub mod sti;
 pub mod tfr;
 mod unwrapped;
 pub mod x3f;
@@ -141,9 +142,9 @@ pub static CAMERAS_TOML: &str = include_str!(concat!(env!("OUT_DIR"), "/cameras.
 pub static SAMPLE: &str = "\nPlease submit samples at https://raw.pixls.us/";
 pub static BUG: &str = "\nPlease file a bug with a sample file at https://github.com/dnglab/dnglab/issues";
 
-const SUPPORTED_FILES_EXT: [&str; 30] = [
+const SUPPORTED_FILES_EXT: [&str; 31] = [
   "ARI", "ARW", "ARQ", "CR2", "CR3", "CRM", "CRW", "DCR", "DCS", "DNG", "ERF", "IIQ", "KDC", "MEF", "MOS", "MRW", "NEF", "NRW", "ORF", "ORI", "PEF", "RAF",
-  "RAW", "RW2", "RWL", "SRW", "3FR", "FFF", "X3F", "QTK",
+  "RAW", "RW2", "RWL", "SRW", "STI", "3FR", "FFF", "X3F", "QTK",
 ];
 
 /// Get list of supported file extensions. All names
@@ -253,6 +254,7 @@ pub enum FormatHint {
   PEF,
   QTK,
   SRW,
+  STI,
   TFR,
   X3F,
 }
@@ -1238,6 +1240,7 @@ impl RawLoader {
             "OM Digital Solutions" => return use_decoder!(orf::OrfDecoder, rawfile, tiff, self),
             "SAMSUNG" => return use_decoder!(srw::SrwDecoder, rawfile, tiff, self),
             "SEIKO EPSON CORP." => return use_decoder!(erf::ErfDecoder, rawfile, tiff, self),
+            "Sinar AG" => return use_decoder!(sti::StiDecoder, rawfile, tiff, self),
             "EASTMAN KODAK COMPANY" => return use_decoder!(kdc::KdcDecoder, rawfile, tiff, self),
             "Eastman Kodak Company" => return use_decoder!(kdc::KdcDecoder, rawfile, tiff, self),
             "KODAK" => return use_decoder!(dcs::DcsDecoder, rawfile, tiff, self),

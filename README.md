@@ -100,6 +100,7 @@ For a list of supported cameras please see [SUPPORTED_CAMERAS.md](SUPPORTED_CAME
 |Pentax/Ricoh | PEF    | ✅ Yes                            |                                        |
 |Phase One    | IIQ    | ✅ Yes                            |                                        |
 |Samsung      | SRW    | ✅ Yes                            |                                        |
+|Sinar        | STI    | ✅ Yes                            | Single-shot files                      |
 |Sony         | ARW    | ✅ Yes                            |                                        |
 |Sony         | ARQ    | ✅ Yes                            | Pixel shift (Imaging Edge), converted to RGB |
 |Sony         | SRF    | ✅ Yes                            |                                        |

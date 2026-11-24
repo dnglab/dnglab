@@ -3003,6 +3003,12 @@ mod sigma {
   }
 }
 
+mod sinar {
+  mod sinarback_evolution_75_raw_modes {
+    super::super::rawdb_test_file!("Sinar", "Sinarback eVolution 75", sinarback_evolution_75_4x3_16bit_sti, "raw_modes/Sinarback eVolution 75_4x3_16bit.sti");
+  }
+}
+
 mod sony {
   mod dsc_f828_raw_modes {
     super::super::rawdb_test_file!("Sony", "DSC-F828", dsc_f828_iso_64_14_14_14bits_uncompressed_srf, "raw_modes/DSC-F828_ISO_64_14 14 14bits_Uncompressed.SRF");
