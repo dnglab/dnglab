@@ -153,6 +153,7 @@ The planner makes these decisions first:
   | --- | --- | --- | --- |
   | Bayer RGB | `bayer_demosaic`: PPG, AHD, VNG, RCD or bilinear | PPG | Superpixel, half size |
   | Bayer with 4 colors (CYGM, RGBE) | VNG, 4 planes | Bilinear, 4 planes | Superpixel, half size, 4 planes |
+  | Other patterns with 4 colors (2x8 CMYG of the Canon PowerShot Pro70) | VNG, 4 planes | VNG, 4 planes | VNG, 4 planes |
   | X-Trans | `xtrans_demosaic`: Markesteijn (3 passes) or VNG | Bilinear | Bilinear |
 
   The LinearRaw data of a DNG conversion (`render_linear_raw` with the default
@@ -244,8 +245,8 @@ OpcodeList1, replacing an existing FixBadPixelsList:
 - CFA data is demosaiced and cropped to the ActiveArea. An algorithm returns
   a `RawlerError::InvalidInput` error for data it can't process, e.g. a CFA of
   another layout; the planner only picks algorithms that match the CFA. A CFA
-  without an algorithm, e.g. a 2x8 pattern, makes the plan fail with the same
-  error. So do the staggered CFALayouts 6 to 9, see below.
+  without an algorithm, e.g. a 2x8 pattern with 3 colors, makes the plan fail
+  with the same error. So do the staggered CFALayouts 6 to 9, see below.
 - **Tiled algorithms:** AHD, VNG, RCD and Markesteijn interpolate from a
   neighbourhood of pixels. They process the image in tiles in parallel, see
   [`sensor/tiles.rs`](../rawler/src/imgop/sensor/tiles.rs): each tile reads its

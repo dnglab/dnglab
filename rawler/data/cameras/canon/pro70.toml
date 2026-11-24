@@ -4,11 +4,9 @@ clean_make = "Canon"
 clean_model = "PowerShot Pro70"
 blackpoint = 34
 whitepoint = 990
-color_pattern = "EBGRBERGEBRGBEGR"
-#crops = [0,0,0,0]
-
-#active_area = [0, 0, -16, 0]
-##crop_area = [8, 0, -8, 0]
+color_pattern = "YCMGCYGMYCGMCYMG"
+plane_color = "GMCY"
+crop_area = [8, 0, 8, 0]
 
 [cameras.color_matrix]
 A = [-0.3134, 0.8164, 0.1796, 0.4059, -0.0318, 0.3818, -0.4285, 0.8509, 0.6816, -0.0731, 0.8024, 0.2184]

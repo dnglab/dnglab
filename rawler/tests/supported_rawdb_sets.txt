@@ -151,6 +151,7 @@ Canon/PowerShot G9/raw_modes
 Canon/PowerShot G9 X Mark II/raw_modes
 Canon/PowerShot G9 X/raw_modes
 Canon/PowerShot Pro1/raw_modes
+Canon/PowerShot Pro70/raw_modes
 Canon/PowerShot S100/raw_modes
 Canon/PowerShot S100V/raw_modes
 Canon/PowerShot S110/raw_modes
