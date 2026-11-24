@@ -28,7 +28,8 @@ pub enum SensorType {
   /// Fujifilm 6x6 X-Trans CFA.
   Xtrans,
   /// Any other CFA layout, e.g. 2x8 or 12x12 patterns, or a 2x2 pattern with
-  /// fewer than 3 colors. No demosaic of the rendering supports it.
+  /// fewer than 3 colors. The rendering demosaics only patterns with 4 colors
+  /// of it, with VNG.
   Other,
 }
 

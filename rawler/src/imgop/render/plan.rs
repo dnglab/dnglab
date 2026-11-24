@@ -508,6 +508,9 @@ fn demosaic_algorithm(config: &CFAConfig, quality: DemosaicQuality, bayer: Bayer
       (DemosaicQuality::Quality, XTransDemosaic::Vng) => Ok((DemosaicAlgorithm::Vng, 3)),
       (DemosaicQuality::Fast | DemosaicQuality::Preview, _) => Ok((DemosaicAlgorithm::XTransBilinear, 3)),
     },
+    // Other patterns with 4 colors, e.g. the 2x8 CMYG pattern of the Canon
+    // PowerShot Pro70: only VNG interpolates patterns of any size
+    SensorType::Other if config.cfa.unique_colors() == 4 => Ok((DemosaicAlgorithm::Vng, 4)),
     _ => Err(input_error!("Demosaic of CFA pattern '{}' is not supported", config.cfa)),
   }
 }

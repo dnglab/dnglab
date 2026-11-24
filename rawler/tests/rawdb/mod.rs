@@ -638,6 +638,9 @@ mod canon {
   mod powershot_pro1_raw_modes {
     super::super::rawdb_test_file!("Canon", "PowerShot Pro1", canon_powershot_pro1_iso_50_crw, "raw_modes/Canon PowerShot Pro1_ISO_50.CRW");
   }
+  mod powershot_pro70_raw_modes {
+    super::super::rawdb_test_file!("Canon", "PowerShot Pro70", powershot_pro70_crw, "raw_modes/PowerShot_Pro70.CRW");
+  }
   mod powershot_s100_raw_modes {
     super::super::rawdb_test_file!("Canon", "PowerShot S100", canon_powershot_s100_iso_80_raw_cr2, "raw_modes/Canon PowerShot S100_ISO_80_RAW.CR2");
   }
