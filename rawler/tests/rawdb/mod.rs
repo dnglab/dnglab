@@ -2935,6 +2935,9 @@ mod phase_one {
 }
 
 mod samsung {
+  mod ek_gn120_raw_modes {
+    super::super::rawdb_test_file!("Samsung", "EK-GN120", ek_gn120_iso_100_samsung_srw_compressed_srw, "raw_modes/EK-GN120_ISO_100_Samsung SRW Compressed.srw");
+  }
   mod ex1_raw_modes {
     super::super::rawdb_test_file!("Samsung", "EX1", ex1_iso_80_packed_raw_srw, "raw_modes/EX1_ISO_80_Packed RAW.SRW");
   }

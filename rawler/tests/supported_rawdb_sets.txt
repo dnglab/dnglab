@@ -479,6 +479,7 @@ Hasselblad/X1D/raw_modes
 Hasselblad/X2D 100C/raw_modes
 Hasselblad/X1D II 50C/raw_modes
 Samsung/EX1/raw_modes
+Samsung/EK-GN120/raw_modes
 Samsung/GX-1L/raw_modes
 Samsung/GX-1S/raw_modes
 Samsung/EX2F/raw_modes
