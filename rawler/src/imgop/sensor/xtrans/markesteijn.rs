@@ -8,7 +8,8 @@
 // Ref [1] https://github.com/naorunaoru/demosaic/blob/5050131e998b7f6414eef02eeb60f74b99d77451/src/xtrans/markesteijn_impl.rs
 
 use multiversion::multiversion;
-use std::{borrow::Cow, time::Instant};
+use std::borrow::Cow;
+use web_time::Instant;
 
 use crate::{
   CFA,

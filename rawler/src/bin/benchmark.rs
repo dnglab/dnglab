@@ -1,6 +1,6 @@
 use std::env;
 use std::path::PathBuf;
-use std::time::Instant;
+use web_time::Instant;
 
 use rawler::decoders::RawDecodeParams;
 use rawler::rawsource::RawSource;

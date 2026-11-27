@@ -15,7 +15,8 @@
 //! so edges get no color fringes. The change fades out near black and white: shadows
 //! and highlights have little room for it, and it would mostly amplify their noise.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 use multiversion::multiversion;
 use rayon::prelude::*;
