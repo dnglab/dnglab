@@ -5,8 +5,7 @@ clean_model = "H4D-H3D"
 blackpoint = 0
 whitepoint = 62914
 color_pattern = "RGGB"
-active_area = [0, 0, 0, 0]
-crop_area = [4, 4, 4, 4]
+active_area = [8, 4, 8, 8]
 
 [cameras.color_matrix]
 A = [0.4785, -0.0456, 0.0425, -0.5655, 1.4054, 0.1696, -0.163, 0.3541, 0.6307]
